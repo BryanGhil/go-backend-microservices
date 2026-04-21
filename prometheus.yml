@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 5s # Check for new data every 5 seconds
+
+scrape_configs:
+  - job_name: 'api-gateway'
+    static_configs:
+      # In docker-compose, 'host.docker.internal' lets the container talk to your local machine
+      - targets: ['host.docker.internal:8080']

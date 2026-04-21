@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package product;
+option go_package = "ecommerce/pb";
+
+service ProductService {
+  rpc GetProduct (GetProductRequest) returns (GetProductResponse);
+  rpc CreateProduct (CreateProductRequest) returns (CreateProductResponse);
+  rpc UpdateProduct (UpdateProductRequest) returns (UpdateProductResponse);
+  rpc DeleteProduct (DeleteProductRequest) returns (DeleteProductResponse);
+  rpc ListProducts (ListProductsRequest) returns (ListProductsResponse);
+}
+
+message GetProductRequest {
+  int64 id = 1;
+}
+
+message GetProductResponse {
+  int64 id = 1;
+  string name = 2;
+  float price = 3;
+}
+
+message CreateProductRequest {
+  string name = 1;
+  float price = 2;
+}
+
+message CreateProductResponse {
+  int64 id = 1;
+}
+
+message UpdateProductRequest {
+  int64 id = 1;
+  string name = 2;
+  float price = 3;
+}
+
+message UpdateProductResponse {
+  bool success = 1;
+}
+
+message DeleteProductRequest {
+  int64 id = 1;
+}
+
+message DeleteProductResponse {
+  bool success = 1;
+}
+
+message ListProductsRequest {
+  // Empty for now, but you could add pagination (limit/offset) later
+}
+
+message ListProductsResponse {
+  repeated GetProductResponse products = 1; 
+}
+
+service SearchService {
+  rpc SearchProducts (SearchRequest) returns (SearchResponse);
+}
+
+message SearchRequest {
+  string query = 1;
+}
+
+message SearchResponse {
+  repeated GetProductResponse products = 1;
+}

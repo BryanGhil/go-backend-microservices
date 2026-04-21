@@ -1,0 +1,15 @@
+*.o
+*.a
+*.so
+_obj
+_test
+*.exe
+*.exe~
+*.dll
+*.dylib
+*.test
+*.out
+vendor/
+.env
+.DS_Store
+Thumbs.db

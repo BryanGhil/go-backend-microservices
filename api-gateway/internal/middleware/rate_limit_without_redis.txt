@@ -1,0 +1,64 @@
+package middleware
+
+import (
+	"fmt"
+	"net/http"
+	"sync"
+
+	"github.com/gin-gonic/gin"
+	"golang.org/x/time/rate"
+)
+
+// We now store limiters based on a generic string "key" (either IP or UserID)
+var visitors = make(map[string]*rate.Limiter)
+var mu sync.Mutex
+
+// getVisitor creates or fetches a bucket for the specific key
+func getVisitor(key string) *rate.Limiter {
+	mu.Lock()
+	defer mu.Unlock()
+
+	limiter, exists := visitors[key]
+	if !exists {
+		// Example: 2 requests per second, maximum burst of 5
+		limiter = rate.NewLimiter(2, 5)
+		visitors[key] = limiter
+	}
+
+	return limiter
+}
+
+// RateLimitMiddleware smartly chooses between User ID and IP Address
+func RateLimitMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		
+		var limiterKey string
+
+		// 1. Check if the user is authenticated (Did AuthMiddleware set a userID?)
+		userID, exists := c.Get("userID")
+		
+		if exists {
+			// They are logged in! Use their database ID as the key.
+			// Format: "user_1", "user_25"
+			limiterKey = fmt.Sprintf("user_%v", userID)
+		} else {
+			// They are a guest. Fall back to their IP address.
+			// Format: "ip_192.168.1.5"
+			limiterKey = fmt.Sprintf("ip_%s", c.ClientIP())
+		}
+
+		// 2. Get the specific bucket for this key
+		limiter := getVisitor(limiterKey)
+
+		// 3. Check if they have tokens left
+		if !limiter.Allow() {
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error": "Rate limit exceeded. Please wait a moment.",
+			})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}

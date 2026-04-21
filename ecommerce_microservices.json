@@ -1,0 +1,244 @@
+{
+	"info": {
+		"name": "E-Commerce Microservices (Go/gRPC)",
+		"description": "API Gateway routes for User, Product, and Search services.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. User Service",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"supersecret\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"register"
+							]
+						}
+					}
+				},
+				{
+					"name": "Login User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"supersecret\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"login"
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Profile (Protected)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer YOUR_TOKEN_HERE",
+								"description": "Replace YOUR_TOKEN_HERE with the token received from the Login endpoint"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"full_name\": \"John Doe\",\n    \"phone\": \"555-0198\",\n    \"address\": \"123 Microservice Lane\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"profile"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Product Service",
+			"item": [
+				{
+					"name": "Create Product",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Wireless Gaming Mouse\",\n    \"price\": 49.99\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/products",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get All Products",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/products",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Product By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/products/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"1"
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Product",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Wireless Gaming Mouse V2\",\n    \"price\": 59.99\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/products/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"1"
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Product",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/products/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"1"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Search Service",
+			"item": [
+				{
+					"name": "Search Products",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/search?q=mouse",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"search"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "mouse"
+								}
+							]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	]
+}

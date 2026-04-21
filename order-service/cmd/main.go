@@ -1,0 +1,64 @@
+package main
+
+import (
+	"context"
+	"database/sql"
+	"log"
+	"net"
+
+	"ecommerce/order-service/internal/delivery"
+	"ecommerce/order-service/internal/repository"
+	"ecommerce/order-service/internal/usecase"
+	"ecommerce/order-service/internal/worker"
+	"ecommerce/order-service/pkg/tracing"
+	"ecommerce/pb"
+
+	_ "github.com/lib/pq"
+	"github.com/segmentio/kafka-go"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"google.golang.org/grpc"
+)
+
+func main() {
+	// 1. Postgres
+	dsn := "host=localhost port=5433 user=postgres password=postgres dbname=ecommerce_db sslmode=disable"
+	db, _ := sql.Open("postgres", dsn)
+
+	// 2. Kafka Publisher (Async)
+	kw := &kafka.Writer{
+		Addr:         kafka.TCP("127.0.0.1:9092"),
+		Balancer:     &kafka.LeastBytes{},
+		Async:        true,
+	}
+
+	// 3. Kafka Consumer (Listening to multiple topics using GroupID)
+	kr := kafka.NewReader(kafka.ReaderConfig{
+		Brokers:     []string{"127.0.0.1:9092"},
+		GroupTopics: []string{"payment-events", "inventory-events"}, // Listen to both!
+		GroupID:     "order-saga-coordinator",
+	})
+
+	// 4. Wiring
+	repo := repository.NewPostgresOrderRepo(db)
+	pub := repository.NewKafkaPublisher(kw)
+	uc := usecase.NewOrderUseCase(repo, pub)
+	
+	// 5. Start Kafka Consumer in background
+	consumer := worker.NewSagaConsumer(kr, uc)
+	go consumer.Start(context.Background())
+
+	// 1. Initialize Tracing
+	shutdown := tracing.InitTracer("order-service") // Change name for each service!
+	defer shutdown(context.Background())
+
+	// 6. Start gRPC Server (for API Gateway)
+	// You will need to create the delivery/grpc_handler.go file just like the other services!
+	grpcHandler := delivery.NewOrderGrpcHandler(uc) 
+	
+	lis, _ := net.Listen("tcp", ":9004")
+	grpcServer := grpc.NewServer(grpc.StatsHandler(otelgrpc.NewServerHandler()))
+	pb.RegisterOrderServiceServer(grpcServer, grpcHandler)
+	
+	log.Println("Order Service running on port :9004")
+	grpcServer.Serve(lis)
+}

@@ -1,0 +1,85 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ecommerce_db
+    ports:
+      - "5433:5432"
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ecommerce_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:8.4-alpine
+    ports:
+      - "6379:6379"
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false # Disables HTTPS/Passwords for local dev
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    restart: always
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: ecommerce-jaeger
+    ports:
+      - "16686:16686" # The UI port (Where you look at the traces)
+      - "4317:4317"   # The OTLP gRPC port (Where Go sends the traces)
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ecommerce-prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # Allows it to scrape your local Go app
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ecommerce-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin # Default password
+    depends_on:
+      - prometheus

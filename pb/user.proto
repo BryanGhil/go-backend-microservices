@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package user;
+option go_package = "ecommerce/pb";
+
+service UserService {
+  rpc Register (RegisterRequest) returns (RegisterResponse);
+  rpc Login (LoginRequest) returns (LoginResponse);
+  rpc VerifySession (VerifySessionRequest) returns (VerifySessionResponse);
+  rpc UpdateProfile (UpdateProfileRequest) returns (UpdateProfileResponse);
+}
+
+message RegisterRequest { string email = 1; string password = 2; }
+message RegisterResponse { int64 user_id = 1; }
+
+message LoginRequest { string email = 1; string password = 2; }
+message LoginResponse { string token = 1; } // Returns the Redis session token
+
+message VerifySessionRequest { string token = 1; }
+message VerifySessionResponse { int64 user_id = 1; }
+
+message UpdateProfileRequest {
+  int64 user_id = 1;
+  string full_name = 2;
+  string phone = 3;
+  string address = 4;
+}
+message UpdateProfileResponse { bool success = 1; }

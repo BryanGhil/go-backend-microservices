@@ -1,0 +1,377 @@
+basePath: /
+definitions:
+  handler.AddStockReq:
+    properties:
+      product_id:
+        example: 1
+        type: integer
+      quantity:
+        example: 50
+        type: integer
+    type: object
+  handler.CheckoutReq:
+    properties:
+      amount:
+        example: 49.99
+        type: number
+      product_id:
+        example: 1
+        type: integer
+    type: object
+  handler.LoginReq:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  handler.ProductReq:
+    properties:
+      name:
+        example: Wireless Mouse
+        type: string
+      price:
+        example: 49.99
+        type: number
+    required:
+    - name
+    - price
+    type: object
+  handler.RegisterReq:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  handler.UpdateProfileReq:
+    properties:
+      address:
+        type: string
+      full_name:
+        type: string
+      phone:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API Gateway for the Go gRPC E-Commerce system.
+  title: E-Commerce Microservices API
+  version: "1.0"
+paths:
+  /api/checkout:
+    post:
+      consumes:
+      - application/json
+      description: Initiates the Saga pattern for ordering a product
+      parameters:
+      - description: Checkout Details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CheckoutReq'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create an Order (Checkout)
+      tags:
+      - Orders
+  /api/inventory/{id}:
+    get:
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get Product Stock
+      tags:
+      - Inventory
+  /api/inventory/add:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Stock Details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.AddStockReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Add Physical Stock
+      tags:
+      - Inventory
+  /api/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LoginReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Login user
+      tags:
+      - Users
+  /api/orders/{id}:
+    get:
+      description: Check if an order is PENDING, COMPLETED, or CANCELLED
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get Order Status
+      tags:
+      - Orders
+  /api/payments/{order_id}:
+    get:
+      description: Check the raw transaction status from the payment gateway
+      parameters:
+      - description: Order ID
+        in: path
+        name: order_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get Payment Status
+      tags:
+      - Payments
+  /api/products:
+    get:
+      description: Retrieves all products from the catalog
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+      summary: List all products
+      tags:
+      - Products
+    post:
+      consumes:
+      - application/json
+      description: Adds a new product to the catalog and publishes to Kafka
+      parameters:
+      - description: Product Details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.ProductReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create a new product
+      tags:
+      - Products
+  /api/products/{id}:
+    delete:
+      description: Removes a product from the catalog
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete a product
+      tags:
+      - Products
+    get:
+      description: Fetches a single product's details
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get a product by ID
+      tags:
+      - Products
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing product's name and price
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated Product Details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.ProductReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update a product
+      tags:
+      - Products
+  /api/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RegisterReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Register a new user
+      tags:
+      - Users
+  /api/search:
+    get:
+      description: Query the Elasticsearch cluster for products matching the search
+        term
+      parameters:
+      - description: Search term (e.g., 'mouse')
+        in: query
+        name: q
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+      summary: Search products
+      tags:
+      - Search
+  /api/users/profile:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Profile Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateProfileReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update User Profile
+      tags:
+      - Users
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

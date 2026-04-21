@@ -1,0 +1,19 @@
+syntax = "proto3";
+package order;
+option go_package = "ecommerce/pb";
+
+service OrderService {
+  rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse);
+  rpc GetOrderStatus (GetOrderStatusRequest) returns (GetOrderStatusResponse);
+}
+
+message CreateOrderRequest {
+  int64 user_id = 1;
+  int64 product_id = 2; // For simplicity, we are buying 1 product
+  float amount = 3;
+}
+
+message CreateOrderResponse { int64 order_id = 1; }
+
+message GetOrderStatusRequest { int64 order_id = 1; }
+message GetOrderStatusResponse { string status = 1; }

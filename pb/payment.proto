@@ -1,0 +1,10 @@
+syntax = "proto3";
+package payment;
+option go_package = "ecommerce/pb";
+
+service PaymentService {
+  rpc GetPaymentStatus (GetPaymentStatusRequest) returns (GetPaymentStatusResponse);
+}
+
+message GetPaymentStatusRequest { int64 order_id = 1; }
+message GetPaymentStatusResponse { string status = 1; }
