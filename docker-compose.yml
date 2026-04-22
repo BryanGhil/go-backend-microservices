@@ -56,7 +56,7 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
   jaeger:
-    image: jaegertracing/all-in-one:latest
+    image: jaegertracing/all-in-one:1.76 # Pinned to the latest 1.76.x stable release
     container_name: ecommerce-jaeger
     ports:
       - "16686:16686" # The UI port (Where you look at the traces)
@@ -65,7 +65,7 @@ services:
       - COLLECTOR_OTLP_ENABLED=true
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.11.2 # Pinned to the current stable v3.11 patch
     container_name: ecommerce-prometheus
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
@@ -75,7 +75,7 @@ services:
       - "host.docker.internal:host-gateway" # Allows it to scrape your local Go app
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:13.0.1 # Pinned to the latest major v13 stable release
     container_name: ecommerce-grafana
     ports:
       - "3000:3000"
