@@ -48,5 +48,7 @@ func main() {
 
 	// 2. Register the handler
 	pb.RegisterSearchServiceServer(grpcServer, searchHandler)
+
+	log.Println("Search Service running on port :9003")
 	grpcServer.Serve(lis)
 }

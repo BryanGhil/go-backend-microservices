@@ -1,34 +1,57 @@
 basePath: /
 definitions:
-  handler.AddStockReq:
+  ecommerce_api-gateway_internal_dto.ErrorResponse:
     properties:
-      product_id:
-        example: 1
-        type: integer
-      quantity:
-        example: 50
+      message:
+        example: Error description goes here
+        type: string
+      success:
+        example: false
+        type: boolean
+    type: object
+  ecommerce_api-gateway_internal_dto.IDData:
+    properties:
+      id:
+        example: 123
         type: integer
     type: object
-  handler.CheckoutReq:
+  ecommerce_api-gateway_internal_dto.IDResponse:
     properties:
-      amount:
+      data:
+        $ref: '#/definitions/ecommerce_api-gateway_internal_dto.IDData'
+      message:
+        example: Operation successful
+        type: string
+      success:
+        example: true
+        type: boolean
+    type: object
+  ecommerce_api-gateway_internal_dto.ProductData:
+    properties:
+      id:
+        example: 1
+        type: integer
+      name:
+        example: Wireless Mouse
+        type: string
+      price:
         example: 49.99
         type: number
-      product_id:
-        example: 1
-        type: integer
     type: object
-  handler.LoginReq:
+  ecommerce_api-gateway_internal_dto.ProductListResponse:
     properties:
-      email:
+      data:
+        items:
+          $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ProductData'
+        type: array
+      message:
+        example: Products retrieved successfully
         type: string
-      password:
-        type: string
-    required:
-    - email
-    - password
+      success:
+        example: true
+        type: boolean
     type: object
-  handler.ProductReq:
+  ecommerce_api-gateway_internal_dto.ProductReq:
     properties:
       name:
         example: Wireless Mouse
@@ -40,7 +63,36 @@ definitions:
     - name
     - price
     type: object
-  handler.RegisterReq:
+  ecommerce_api-gateway_internal_dto.ProductResponse:
+    properties:
+      data:
+        $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ProductData'
+      message:
+        example: Product found
+        type: string
+      success:
+        example: true
+        type: boolean
+    type: object
+  internal_handler.AddStockReq:
+    properties:
+      product_id:
+        example: 1
+        type: integer
+      quantity:
+        example: 50
+        type: integer
+    type: object
+  internal_handler.CheckoutReq:
+    properties:
+      amount:
+        example: 49.99
+        type: number
+      product_id:
+        example: 1
+        type: integer
+    type: object
+  internal_handler.LoginReq:
     properties:
       email:
         type: string
@@ -50,7 +102,17 @@ definitions:
     - email
     - password
     type: object
-  handler.UpdateProfileReq:
+  internal_handler.RegisterReq:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  internal_handler.UpdateProfileReq:
     properties:
       address:
         type: string
@@ -77,7 +139,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handler.CheckoutReq'
+          $ref: '#/definitions/internal_handler.CheckoutReq'
       produces:
       - application/json
       responses:
@@ -120,7 +182,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handler.AddStockReq'
+          $ref: '#/definitions/internal_handler.AddStockReq'
       produces:
       - application/json
       responses:
@@ -142,7 +204,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handler.LoginReq'
+          $ref: '#/definitions/internal_handler.LoginReq'
       produces:
       - application/json
       responses:
@@ -205,10 +267,11 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              additionalProperties: true
-              type: object
-            type: array
+            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ProductListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse'
       summary: List all products
       tags:
       - Products
@@ -222,15 +285,22 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handler.ProductReq'
+          $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ProductReq'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.IDResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse'
       summary: Create a new product
       tags:
       - Products
@@ -249,8 +319,11 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.IDResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse'
       summary: Delete a product
       tags:
       - Products
@@ -268,8 +341,15 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ProductResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse'
       summary: Get a product by ID
       tags:
       - Products
@@ -288,15 +368,26 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handler.ProductReq'
+          $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ProductReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.IDResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse'
       summary: Update a product
       tags:
       - Products
@@ -310,7 +401,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handler.RegisterReq'
+          $ref: '#/definitions/internal_handler.RegisterReq'
       produces:
       - application/json
       responses:
@@ -355,7 +446,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handler.UpdateProfileReq'
+          $ref: '#/definitions/internal_handler.UpdateProfileReq'
       produces:
       - application/json
       responses:

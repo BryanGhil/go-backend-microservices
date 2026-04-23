@@ -56,7 +56,7 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
   jaeger:
-    image: jaegertracing/all-in-one:1.76 # Pinned to the latest 1.76.x stable release
+    image: jaegertracing/all-in-one:1.76.0 # Pinned to the latest 1.76.x stable release
     container_name: ecommerce-jaeger
     ports:
       - "16686:16686" # The UI port (Where you look at the traces)

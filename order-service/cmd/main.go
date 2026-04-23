@@ -32,7 +32,7 @@ func runDBMigrations(db *sql.DB) {
 
 	// Tell it to look in the "db/migrations" folder
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://db/migrations",
+		"file://order-service/db/migrations",
 		"postgres", driver)
 	if err != nil {
 		log.Fatalf("Could not initialize migrate instance: %v", err)

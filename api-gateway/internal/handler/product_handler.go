@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"ecommerce/api-gateway/internal/dto"
 	"ecommerce/api-gateway/pkg/utils"
 	"ecommerce/pb"
 	"net/http"
@@ -27,23 +28,19 @@ func (h *ProductHandler) RegisterRoutes(router *gin.RouterGroup) {
 	router.DELETE("/products/:id", h.DeleteProduct)
 }
 
-// --- DTOs for Swagger ---
-
-type ProductReq struct {
-	Name  string  `json:"name" binding:"required" example:"Wireless Mouse"`
-	Price float64 `json:"price" binding:"required" example:"49.99"`
-}
 
 // @Summary Create a new product
 // @Description Adds a new product to the catalog and publishes to Kafka
 // @Tags Products
 // @Accept json
 // @Produce json
-// @Param request body ProductReq true "Product Details"
-// @Success 201 {object} map[string]interface{}
+// @Param request body dto.ProductReq true "Product Details"
+// @Success 201 {object} dto.IDResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
 // @Router /api/products [post]
 func (h *ProductHandler) CreateProduct(c *gin.Context) {
-	var reqBody ProductReq
+	var reqBody dto.ProductReq
 	if err := c.ShouldBindJSON(&reqBody); err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid JSON format")
 		return
@@ -63,7 +60,8 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 // @Description Retrieves all products from the catalog
 // @Tags Products
 // @Produce json
-// @Success 200 {array} map[string]interface{}
+// @Success 200 {object} dto.ProductListResponse
+// @Failure 500 {object} dto.ErrorResponse
 // @Router /api/products [get]
 func (h *ProductHandler) ListProducts(c *gin.Context) {
 	res, err := h.client.ListProducts(c.Request.Context(), &pb.ListProductsRequest{})
@@ -79,7 +77,9 @@ func (h *ProductHandler) ListProducts(c *gin.Context) {
 // @Tags Products
 // @Produce json
 // @Param id path int true "Product ID"
-// @Success 200 {object} map[string]interface{}
+// @Success 200 {object} dto.ProductResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
 // @Router /api/products/{id} [get]
 func (h *ProductHandler) GetProduct(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -102,12 +102,15 @@ func (h *ProductHandler) GetProduct(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path int true "Product ID"
-// @Param request body ProductReq true "Updated Product Details"
-// @Success 200 {object} map[string]interface{}
+// @Param request body dto.ProductReq true "Updated Product Details"
+// @Success 200 {object} dto.IDResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
 // @Router /api/products/{id} [put]
 func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-	var reqBody ProductReq
+	var reqBody dto.ProductReq
 	if err := c.ShouldBindJSON(&reqBody); err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid JSON format")
 		return
@@ -134,7 +137,8 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 // @Tags Products
 // @Produce json
 // @Param id path int true "Product ID"
-// @Success 200 {object} map[string]interface{}
+// @Success 200 {object} dto.IDResponse
+// @Failure 500 {object} dto.ErrorResponse
 // @Router /api/products/{id} [delete]
 func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)

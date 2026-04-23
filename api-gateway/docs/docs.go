@@ -40,7 +40,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.CheckoutReq"
+                            "$ref": "#/definitions/internal_handler.CheckoutReq"
                         }
                     }
                 ],
@@ -74,7 +74,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.AddStockReq"
+                            "$ref": "#/definitions/internal_handler.AddStockReq"
                         }
                     }
                 ],
@@ -137,7 +137,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.LoginReq"
+                            "$ref": "#/definitions/internal_handler.LoginReq"
                         }
                     }
                 ],
@@ -231,11 +231,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "additionalProperties": true
-                            }
+                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ProductListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse"
                         }
                     }
                 }
@@ -259,7 +261,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.ProductReq"
+                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ProductReq"
                         }
                     }
                 ],
@@ -267,8 +269,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.IDResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse"
                         }
                     }
                 }
@@ -297,8 +310,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ProductResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse"
                         }
                     }
                 }
@@ -329,7 +353,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.ProductReq"
+                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ProductReq"
                         }
                     }
                 ],
@@ -337,8 +361,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.IDResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse"
                         }
                     }
                 }
@@ -365,8 +406,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.IDResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse"
                         }
                     }
                 }
@@ -391,7 +437,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.RegisterReq"
+                            "$ref": "#/definitions/internal_handler.RegisterReq"
                         }
                     }
                 ],
@@ -463,7 +509,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.UpdateProfileReq"
+                            "$ref": "#/definitions/internal_handler.UpdateProfileReq"
                         }
                     }
                 ],
@@ -480,48 +526,81 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handler.AddStockReq": {
+        "ecommerce_api-gateway_internal_dto.ErrorResponse": {
             "type": "object",
             "properties": {
-                "product_id": {
-                    "type": "integer",
-                    "example": 1
+                "message": {
+                    "type": "string",
+                    "example": "Error description goes here"
                 },
-                "quantity": {
-                    "type": "integer",
-                    "example": 50
+                "success": {
+                    "type": "boolean",
+                    "example": false
                 }
             }
         },
-        "handler.CheckoutReq": {
+        "ecommerce_api-gateway_internal_dto.IDData": {
             "type": "object",
             "properties": {
-                "amount": {
+                "id": {
+                    "type": "integer",
+                    "example": 123
+                }
+            }
+        },
+        "ecommerce_api-gateway_internal_dto.IDResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.IDData"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Operation successful"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "ecommerce_api-gateway_internal_dto.ProductData": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Wireless Mouse"
+                },
+                "price": {
                     "type": "number",
                     "example": 49.99
-                },
-                "product_id": {
-                    "type": "integer",
-                    "example": 1
                 }
             }
         },
-        "handler.LoginReq": {
+        "ecommerce_api-gateway_internal_dto.ProductListResponse": {
             "type": "object",
-            "required": [
-                "email",
-                "password"
-            ],
             "properties": {
-                "email": {
-                    "type": "string"
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ProductData"
+                    }
                 },
-                "password": {
-                    "type": "string"
+                "message": {
+                    "type": "string",
+                    "example": "Products retrieved successfully"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },
-        "handler.ProductReq": {
+        "ecommerce_api-gateway_internal_dto.ProductReq": {
             "type": "object",
             "required": [
                 "name",
@@ -538,7 +617,49 @@ const docTemplate = `{
                 }
             }
         },
-        "handler.RegisterReq": {
+        "ecommerce_api-gateway_internal_dto.ProductResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ProductData"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Product found"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "internal_handler.AddStockReq": {
+            "type": "object",
+            "properties": {
+                "product_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "quantity": {
+                    "type": "integer",
+                    "example": 50
+                }
+            }
+        },
+        "internal_handler.CheckoutReq": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number",
+                    "example": 49.99
+                },
+                "product_id": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "internal_handler.LoginReq": {
             "type": "object",
             "required": [
                 "email",
@@ -553,7 +674,22 @@ const docTemplate = `{
                 }
             }
         },
-        "handler.UpdateProfileReq": {
+        "internal_handler.RegisterReq": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler.UpdateProfileReq": {
             "type": "object",
             "properties": {
                 "address": {

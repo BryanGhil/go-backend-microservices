@@ -13,3 +13,5 @@ vendor/
 .env
 .DS_Store
 Thumbs.db
+logs/
+bin/
