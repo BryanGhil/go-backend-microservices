@@ -17,12 +17,43 @@ import (
 	"github.com/segmentio/kafka-go"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
+
+	// --- NEW MIGRATION IMPORTS ---
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
+
+func runDBMigrations(db *sql.DB) {
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	if err != nil {
+		log.Fatalf("Could not create postgres driver for migration: %v", err)
+	}
+
+	// Tell it to look in the "db/migrations" folder
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://db/migrations",
+		"postgres", driver)
+	if err != nil {
+		log.Fatalf("Could not initialize migrate instance: %v", err)
+	}
+
+	// Run the UP migrations
+	err = m.Up()
+	if err != nil && err != migrate.ErrNoChange {
+		log.Fatalf("Could not run up migrations: %v", err)
+	}
+
+	log.Println("Database migrations applied successfully!")
+}
+
 
 func main() {
 	// 1. Postgres
 	dsn := "host=localhost port=5433 user=postgres password=postgres dbname=ecommerce_db sslmode=disable"
 	db, _ := sql.Open("postgres", dsn)
+
+	runDBMigrations(db)
 
 	// 2. Kafka Publisher (Async)
 	kw := &kafka.Writer{
