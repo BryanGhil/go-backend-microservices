@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS order_items (
+    id BIGSERIAL PRIMARY KEY,
+    order_id BIGINT NOT NULL REFERENCES orders(id),
+    product_id BIGINT NOT NULL,
+    seller_id BIGINT NOT NULL,        
+    quantity INT NOT NULL,
+    price_at_purchase NUMERIC(20, 2) NOT NULL,
+    status VARCHAR(50) DEFAULT 'PENDING', -- Valid values: PENDING, PREPARING, SHIPPED, COMPLETED, CANCELLED, RETURNED
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
