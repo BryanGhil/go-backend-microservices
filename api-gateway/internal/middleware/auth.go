@@ -32,6 +32,12 @@ func AuthMiddleware(userClient pb.UserServiceClient) gin.HandlerFunc {
 		}
 
 		c.Set("userID", res.UserId)
+		role := res.Role
+		if role == "" {
+			role = "buyer" 
+		}
+		c.Set("role", role)
+		
 		c.Next()
 	}
 }

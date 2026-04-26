@@ -7,7 +7,7 @@ import (
 )
 
 type productUseCase struct {
-	repo domain.ProductRepository
+	repo      domain.ProductRepository
 	publisher domain.ProductEventPublisher
 }
 
@@ -16,44 +16,51 @@ func NewProductUseCase(repo domain.ProductRepository, pub domain.ProductEventPub
 }
 
 func (u *productUseCase) GetProduct(ctx context.Context, id int64) (*domain.Product, error) {
-	// You can add business logic here (e.g., checking if the product is active)
 	return u.repo.GetByID(ctx, id)
 }
 
-func (u *productUseCase) CreateProduct(ctx context.Context, name string, price float64) (int64, error) {
-	// Simple validation example
-	if price < 0 {
+func (u *productUseCase) CreateProduct(ctx context.Context, p *domain.Product) (int64, error) {
+	// Validation
+	if p.Price < 0 {
 		return 0, fmt.Errorf("price cannot be negative")
 	}
-
-	product := &domain.Product{
-		Name:  name,
-		Price: price,
+	if p.SellerID == 0 {
+		return 0, fmt.Errorf("seller ID is required")
 	}
 
-	id, err := u.repo.Create(ctx, product)
+	id, err := u.repo.Create(ctx, p)
 	if err != nil {
 		return 0, err
 	}
-	product.ID = id
+	p.ID = id
+	p.IsActive = true // Default to active on creation
 
-	// 2. Publish to Kafka (Asynchronous-ish)
-	// If this fails, we log it, but we DON'T fail the user's request. 
-	// The product is already in Postgres.
-	_ = u.publisher.PublishProductCreated(ctx, product) 
+	// Publish to Kafka
+	_ = u.publisher.PublishProductCreated(ctx, p)
 
 	return id, nil
 }
 
-func (u *productUseCase) UpdateProduct(ctx context.Context, id int64, name string, price float64) error {
-	p := &domain.Product{ID: id, Name: name, Price: price}
+func (u *productUseCase) UpdateProduct(ctx context.Context, p *domain.Product) error {
+	if p.Price < 0 {
+		return fmt.Errorf("price cannot be negative")
+	}
 	return u.repo.Update(ctx, p)
 }
 
 func (u *productUseCase) DeleteProduct(ctx context.Context, id int64) error {
+	// Using the repository's soft delete (setting is_active = false)
 	return u.repo.Delete(ctx, id)
 }
 
-func (u *productUseCase) GetAllProducts(ctx context.Context) ([]*domain.Product, error) {
-	return u.repo.GetAll(ctx)
+func (u *productUseCase) ListProducts(ctx context.Context, limit, offset int32, sellerID int64, category string) ([]*domain.Product, int64, error) {
+	// Set safe defaults for pagination to prevent massive DB queries
+	if limit <= 0 || limit > 100 {
+		limit = 10
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	return u.repo.ListProducts(ctx, limit, offset, sellerID, category)
 }

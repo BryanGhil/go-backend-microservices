@@ -3,9 +3,14 @@ package domain
 import "context"
 
 type Product struct {
-	ID    int64
-	Name  string
-	Price float64
+    ID          int64
+    SellerID    int64
+    Name        string
+    Description string
+    Category    string
+    Price       float64 
+    ImageURL    string
+    IsActive    bool
 }
 
 // The interfaces dictate how the layers talk to each other
@@ -14,15 +19,15 @@ type ProductRepository interface {
 	Create(ctx context.Context, p *Product) (int64, error)
 	Update(ctx context.Context, p *Product) error
 	Delete(ctx context.Context, id int64) error
-	GetAll(ctx context.Context) ([]*Product, error)
+	ListProducts(ctx context.Context, limit, offset int32, sellerID int64, category string) ([]*Product, int64, error)
 }
 
 type ProductUseCase interface {
 	GetProduct(ctx context.Context, id int64) (*Product, error)
-	CreateProduct(ctx context.Context, name string, price float64) (int64, error)
-	UpdateProduct(ctx context.Context, id int64, name string, price float64) error
+	CreateProduct(ctx context.Context, p *Product) (int64, error)
+    UpdateProduct(ctx context.Context, p *Product) error
 	DeleteProduct(ctx context.Context, id int64) error
-	GetAllProducts(ctx context.Context) ([]*Product, error)
+	ListProducts(ctx context.Context, limit, offset int32, sellerID int64, category string) ([]*Product, int64, error)
 }
 
 // Add this below your existing interfaces

@@ -21,11 +21,15 @@ func (h *SearchGrpcHandler) SearchProducts(ctx context.Context, req *pb.SearchRe
 		return nil, err
 	}
 
-	var pbProducts []*pb.GetProductResponse
+	var pbProducts []*pb.Product
 	for _, p := range results {
-		pbProducts = append(pbProducts, &pb.GetProductResponse{
-			Id: p.ID, Name: p.Name, Price: float32(p.Price),
+		pbProducts = append(pbProducts, &pb.Product{
+			Id: p.ID, 
+			Name: p.Name, 
+			Price: float64(p.Price),
 		})
 	}
-	return &pb.SearchResponse{Products: pbProducts}, nil
+	return &pb.SearchResponse{
+		Products: pbProducts,
+		}, nil
 }

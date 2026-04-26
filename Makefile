@@ -1,4 +1,4 @@
-.PHONY: run-infra build-services run-services stop-services start status clean
+.PHONY: run-infra build-services run-services stop-services start status clean generate-proto
 
 # Starts your databases, Kafka, Jaeger, etc.
 run-infra:
@@ -53,3 +53,9 @@ clean: stop-services
 	@echo "Cleaning up..."
 	@rm -rf bin/ logs/
 	@echo "Clean complete!"
+
+generate-proto:
+	protoc --proto_path=pb \
+	--go_out=pb --go_opt=paths=source_relative \
+	--go-grpc_out=pb --go-grpc_opt=paths=source_relative \
+	pb/*.proto

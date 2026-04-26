@@ -17,7 +17,11 @@ message LoginRequest { string email = 1; string password = 2; }
 message LoginResponse { string token = 1; } // Returns the Redis session token
 
 message VerifySessionRequest { string token = 1; }
-message VerifySessionResponse { int64 user_id = 1; }
+message VerifySessionResponse { 
+  int64 user_id = 1; 
+  string role = 2;
+  bool is_valid = 3;
+  }
 
 message UpdateProfileRequest {
   int64 user_id = 1;
