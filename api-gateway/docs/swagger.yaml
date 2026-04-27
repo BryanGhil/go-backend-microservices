@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  ecommerce_api-gateway_internal_dto.ErrorResponse:
+  dto.ErrorResponse:
     properties:
       message:
         example: Error description goes here
@@ -9,16 +9,16 @@ definitions:
         example: false
         type: boolean
     type: object
-  ecommerce_api-gateway_internal_dto.IDData:
+  dto.IDData:
     properties:
       id:
         example: 123
         type: integer
     type: object
-  ecommerce_api-gateway_internal_dto.IDResponse:
+  dto.IDResponse:
     properties:
       data:
-        $ref: '#/definitions/ecommerce_api-gateway_internal_dto.IDData'
+        $ref: '#/definitions/dto.IDData'
       message:
         example: Operation successful
         type: string
@@ -26,8 +26,21 @@ definitions:
         example: true
         type: boolean
     type: object
-  ecommerce_api-gateway_internal_dto.ProductData:
+  dto.LoginReq:
     properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  dto.ProductData:
+    properties:
+      description:
+        example: Best mouse in the world
+        type: string
       id:
         example: 1
         type: integer
@@ -38,11 +51,11 @@ definitions:
         example: 49.99
         type: number
     type: object
-  ecommerce_api-gateway_internal_dto.ProductListResponse:
+  dto.ProductListResponse:
     properties:
       data:
         items:
-          $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ProductData'
+          $ref: '#/definitions/dto.ProductData'
         type: array
       message:
         example: Products retrieved successfully
@@ -51,8 +64,17 @@ definitions:
         example: true
         type: boolean
     type: object
-  ecommerce_api-gateway_internal_dto.ProductReq:
+  dto.ProductReq:
     properties:
+      category:
+        example: Gaming
+        type: string
+      description:
+        example: Best mouse in the World
+        type: string
+      image_url:
+        example: www.google.com
+        type: string
       name:
         example: Wireless Mouse
         type: string
@@ -60,21 +82,56 @@ definitions:
         example: 49.99
         type: number
     required:
+    - description
     - name
     - price
     type: object
-  ecommerce_api-gateway_internal_dto.ProductResponse:
+  dto.RegisterReq:
     properties:
-      data:
-        $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ProductData'
-      message:
-        example: Product found
+      email:
         type: string
-      success:
-        example: true
-        type: boolean
+      full_name:
+        type: string
+      password:
+        minLength: 6
+        type: string
+      role:
+        description: 'Optional: defaults to "buyer" in usecase'
+        type: string
+      shop_name:
+        description: Required if role is "seller"
+        type: string
+    required:
+    - email
+    - full_name
+    - password
     type: object
-  internal_handler.AddStockReq:
+  dto.TokenResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  dto.UpdateProfileReq:
+    properties:
+      address:
+        type: string
+      full_name:
+        type: string
+      phone:
+        type: string
+      shop_description:
+        description: For Sellers
+        type: string
+      shop_name:
+        description: For Sellers
+        type: string
+    type: object
+  dto.UserIDResponse:
+    properties:
+      user_id:
+        type: integer
+    type: object
+  handler.AddStockReq:
     properties:
       product_id:
         example: 1
@@ -83,7 +140,7 @@ definitions:
         example: 50
         type: integer
     type: object
-  internal_handler.CheckoutReq:
+  handler.CheckoutReq:
     properties:
       amount:
         example: 49.99
@@ -91,35 +148,6 @@ definitions:
       product_id:
         example: 1
         type: integer
-    type: object
-  internal_handler.LoginReq:
-    properties:
-      email:
-        type: string
-      password:
-        type: string
-    required:
-    - email
-    - password
-    type: object
-  internal_handler.RegisterReq:
-    properties:
-      email:
-        type: string
-      password:
-        type: string
-    required:
-    - email
-    - password
-    type: object
-  internal_handler.UpdateProfileReq:
-    properties:
-      address:
-        type: string
-      full_name:
-        type: string
-      phone:
-        type: string
     type: object
 host: localhost:8080
 info:
@@ -139,7 +167,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.CheckoutReq'
+          $ref: '#/definitions/handler.CheckoutReq'
       produces:
       - application/json
       responses:
@@ -182,7 +210,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.AddStockReq'
+          $ref: '#/definitions/handler.AddStockReq'
       produces:
       - application/json
       responses:
@@ -198,21 +226,29 @@ paths:
     post:
       consumes:
       - application/json
+      description: Authenticates a user and returns a JWT/Session token
       parameters:
       - description: User credentials
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.LoginReq'
+          $ref: '#/definitions/dto.LoginReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
       summary: Login user
       tags:
       - Users
@@ -260,75 +296,63 @@ paths:
       - Payments
   /api/products:
     get:
-      description: Retrieves all products from the catalog
+      description: Retrieves all products with pagination and optional filters
+      parameters:
+      - description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Filter by category
+        in: query
+        name: category
+        type: string
+      - description: Filter by seller
+        in: query
+        name: seller_id
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ProductListResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse'
+            $ref: '#/definitions/dto.ProductListResponse'
       summary: List all products
       tags:
       - Products
     post:
       consumes:
       - application/json
-      description: Adds a new product to the catalog and publishes to Kafka
+      description: Adds a new product to the catalog. Only Sellers and Admins can
+        do this.
       parameters:
       - description: Product Details
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ProductReq'
+          $ref: '#/definitions/dto.ProductReq'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.IDResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse'
+            $ref: '#/definitions/dto.IDResponse'
       summary: Create a new product
       tags:
       - Products
   /api/products/{id}:
     delete:
-      description: Removes a product from the catalog
-      parameters:
-      - description: Product ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.IDResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse'
+      responses: {}
       summary: Delete a product
       tags:
       - Products
     get:
-      description: Fetches a single product's details
       parameters:
       - description: Product ID
         in: path
@@ -337,57 +361,12 @@ paths:
         type: integer
       produces:
       - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ProductResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse'
+      responses: {}
       summary: Get a product by ID
       tags:
       - Products
     put:
-      consumes:
-      - application/json
-      description: Updates an existing product's name and price
-      parameters:
-      - description: Product ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Updated Product Details
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ProductReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.IDResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse'
+      responses: {}
       summary: Update a product
       tags:
       - Products
@@ -395,21 +374,29 @@ paths:
     post:
       consumes:
       - application/json
+      description: Registers a new buyer or seller account
       parameters:
-      - description: User credentials
+      - description: User credentials and profile details
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.RegisterReq'
+          $ref: '#/definitions/dto.RegisterReq'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.UserIDResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
       summary: Register a new user
       tags:
       - Users
@@ -440,13 +427,14 @@ paths:
     put:
       consumes:
       - application/json
+      description: Updates the profile of the currently authenticated user
       parameters:
       - description: Profile Data
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.UpdateProfileReq'
+          $ref: '#/definitions/dto.UpdateProfileReq'
       produces:
       - application/json
       responses:
@@ -455,6 +443,14 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update User Profile

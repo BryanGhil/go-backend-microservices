@@ -19,9 +19,23 @@ func NewUserGrpcHandler(uc domain.UserUseCase) *UserGrpcHandler {
 }
 
 func (h *UserGrpcHandler) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
-	id, err := h.usecase.Register(ctx, req.GetEmail(), req.GetPassword())
+	// Map proto request to domain struct
+	domainUser := &domain.User{
+		Email:    req.GetEmail(),
+		FullName: req.GetFullName(),
+		Role:     req.GetRole(),
+	}
+
+	// Add seller profile if applicable
+	if req.GetRole() == "seller" {
+		domainUser.SellerProfile = &domain.SellerProfile{
+			ShopName: req.GetShopName(),
+		}
+	}
+
+	id, err := h.usecase.Register(ctx, domainUser, req.GetPassword())
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to register user")
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &pb.RegisterResponse{UserId: id}, nil
 }
@@ -35,15 +49,37 @@ func (h *UserGrpcHandler) Login(ctx context.Context, req *pb.LoginRequest) (*pb.
 }
 
 func (h *UserGrpcHandler) VerifySession(ctx context.Context, req *pb.VerifySessionRequest) (*pb.VerifySessionResponse, error) {
-	id, err := h.usecase.VerifySession(ctx, req.GetToken())
+	id, role, err := h.usecase.VerifySession(ctx, req.GetToken())
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, "invalid or expired session")
 	}
-	return &pb.VerifySessionResponse{UserId: id}, nil
+	
+	// Now returning both ID and Role to the API Gateway!
+	return &pb.VerifySessionResponse{
+		UserId:  id,
+		Role:    role,
+		IsValid: true,
+	}, nil
 }
 
 func (h *UserGrpcHandler) UpdateProfile(ctx context.Context, req *pb.UpdateProfileRequest) (*pb.UpdateProfileResponse, error) {
-	err := h.usecase.UpdateProfile(ctx, req.GetUserId(), req.GetFullName(), req.GetPhone(), req.GetAddress())
+	domainUser := &domain.User{
+		ID:       req.GetUserId(),
+		FullName: req.GetFullName(),
+		Phone:    req.GetPhone(),
+		Address:  req.GetAddress(),
+	}
+
+	// Pass seller updates if they exist
+	if req.GetShopName() != "" || req.GetShopDescription() != "" {
+		domainUser.SellerProfile = &domain.SellerProfile{
+			UserID:          req.GetUserId(),
+			ShopName:        req.GetShopName(),
+			ShopDescription: req.GetShopDescription(),
+		}
+	}
+
+	err := h.usecase.UpdateProfile(ctx, domainUser)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to update profile")
 	}

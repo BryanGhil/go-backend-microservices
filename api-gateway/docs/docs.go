@@ -40,7 +40,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.CheckoutReq"
+                            "$ref": "#/definitions/handler.CheckoutReq"
                         }
                     }
                 ],
@@ -74,7 +74,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.AddStockReq"
+                            "$ref": "#/definitions/handler.AddStockReq"
                         }
                     }
                 ],
@@ -120,6 +120,7 @@ const docTemplate = `{
         },
         "/api/login": {
             "post": {
+                "description": "Authenticates a user and returns a JWT/Session token",
                 "consumes": [
                     "application/json"
                 ],
@@ -137,7 +138,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.LoginReq"
+                            "$ref": "#/definitions/dto.LoginReq"
                         }
                     }
                 ],
@@ -145,8 +146,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.TokenResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -219,7 +231,7 @@ const docTemplate = `{
         },
         "/api/products": {
             "get": {
-                "description": "Retrieves all products from the catalog",
+                "description": "Retrieves all products with pagination and optional filters",
                 "produces": [
                     "application/json"
                 ],
@@ -227,23 +239,43 @@ const docTemplate = `{
                     "Products"
                 ],
                 "summary": "List all products",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by category",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter by seller",
+                        "name": "seller_id",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ProductListResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ProductListResponse"
                         }
                     }
                 }
             },
             "post": {
-                "description": "Adds a new product to the catalog and publishes to Kafka",
+                "description": "Adds a new product to the catalog. Only Sellers and Admins can do this.",
                 "consumes": [
                     "application/json"
                 ],
@@ -261,7 +293,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ProductReq"
+                            "$ref": "#/definitions/dto.ProductReq"
                         }
                     }
                 ],
@@ -269,19 +301,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.IDResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.IDResponse"
                         }
                     }
                 }
@@ -289,7 +309,6 @@ const docTemplate = `{
         },
         "/api/products/{id}": {
             "get": {
-                "description": "Fetches a single product's details",
                 "produces": [
                     "application/json"
                 ],
@@ -306,120 +325,26 @@ const docTemplate = `{
                         "required": true
                     }
                 ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ProductResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse"
-                        }
-                    }
-                }
+                "responses": {}
             },
             "put": {
-                "description": "Updates an existing product's name and price",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
                 "tags": [
                     "Products"
                 ],
                 "summary": "Update a product",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Product ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Updated Product Details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ProductReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.IDResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse"
-                        }
-                    }
-                }
+                "responses": {}
             },
             "delete": {
-                "description": "Removes a product from the catalog",
-                "produces": [
-                    "application/json"
-                ],
                 "tags": [
                     "Products"
                 ],
                 "summary": "Delete a product",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Product ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.IDResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ErrorResponse"
-                        }
-                    }
-                }
+                "responses": {}
             }
         },
         "/api/register": {
             "post": {
+                "description": "Registers a new buyer or seller account",
                 "consumes": [
                     "application/json"
                 ],
@@ -432,12 +357,12 @@ const docTemplate = `{
                 "summary": "Register a new user",
                 "parameters": [
                     {
-                        "description": "User credentials",
+                        "description": "User credentials and profile details",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.RegisterReq"
+                            "$ref": "#/definitions/dto.RegisterReq"
                         }
                     }
                 ],
@@ -445,8 +370,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.UserIDResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -492,6 +428,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Updates the profile of the currently authenticated user",
                 "consumes": [
                     "application/json"
                 ],
@@ -509,7 +446,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.UpdateProfileReq"
+                            "$ref": "#/definitions/dto.UpdateProfileReq"
                         }
                     }
                 ],
@@ -520,13 +457,25 @@ const docTemplate = `{
                             "type": "object",
                             "additionalProperties": true
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
                     }
                 }
             }
         }
     },
     "definitions": {
-        "ecommerce_api-gateway_internal_dto.ErrorResponse": {
+        "dto.ErrorResponse": {
             "type": "object",
             "properties": {
                 "message": {
@@ -539,7 +488,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ecommerce_api-gateway_internal_dto.IDData": {
+        "dto.IDData": {
             "type": "object",
             "properties": {
                 "id": {
@@ -548,11 +497,11 @@ const docTemplate = `{
                 }
             }
         },
-        "ecommerce_api-gateway_internal_dto.IDResponse": {
+        "dto.IDResponse": {
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.IDData"
+                    "$ref": "#/definitions/dto.IDData"
                 },
                 "message": {
                     "type": "string",
@@ -564,9 +513,28 @@ const docTemplate = `{
                 }
             }
         },
-        "ecommerce_api-gateway_internal_dto.ProductData": {
+        "dto.LoginReq": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ProductData": {
             "type": "object",
             "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Best mouse in the world"
+                },
                 "id": {
                     "type": "integer",
                     "example": 1
@@ -581,13 +549,13 @@ const docTemplate = `{
                 }
             }
         },
-        "ecommerce_api-gateway_internal_dto.ProductListResponse": {
+        "dto.ProductListResponse": {
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ProductData"
+                        "$ref": "#/definitions/dto.ProductData"
                     }
                 },
                 "message": {
@@ -600,13 +568,26 @@ const docTemplate = `{
                 }
             }
         },
-        "ecommerce_api-gateway_internal_dto.ProductReq": {
+        "dto.ProductReq": {
             "type": "object",
             "required": [
+                "description",
                 "name",
                 "price"
             ],
             "properties": {
+                "category": {
+                    "type": "string",
+                    "example": "Gaming"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Best mouse in the World"
+                },
+                "image_url": {
+                    "type": "string",
+                    "example": "www.google.com"
+                },
                 "name": {
                     "type": "string",
                     "example": "Wireless Mouse"
@@ -617,23 +598,73 @@ const docTemplate = `{
                 }
             }
         },
-        "ecommerce_api-gateway_internal_dto.ProductResponse": {
+        "dto.RegisterReq": {
             "type": "object",
+            "required": [
+                "email",
+                "full_name",
+                "password"
+            ],
             "properties": {
-                "data": {
-                    "$ref": "#/definitions/ecommerce_api-gateway_internal_dto.ProductData"
+                "email": {
+                    "type": "string"
                 },
-                "message": {
+                "full_name": {
+                    "type": "string"
+                },
+                "password": {
                     "type": "string",
-                    "example": "Product found"
+                    "minLength": 6
                 },
-                "success": {
-                    "type": "boolean",
-                    "example": true
+                "role": {
+                    "description": "Optional: defaults to \"buyer\" in usecase",
+                    "type": "string"
+                },
+                "shop_name": {
+                    "description": "Required if role is \"seller\"",
+                    "type": "string"
                 }
             }
         },
-        "internal_handler.AddStockReq": {
+        "dto.TokenResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UpdateProfileReq": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "shop_description": {
+                    "description": "For Sellers",
+                    "type": "string"
+                },
+                "shop_name": {
+                    "description": "For Sellers",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UserIDResponse": {
+            "type": "object",
+            "properties": {
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "handler.AddStockReq": {
             "type": "object",
             "properties": {
                 "product_id": {
@@ -646,7 +677,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_handler.CheckoutReq": {
+        "handler.CheckoutReq": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -656,50 +687,6 @@ const docTemplate = `{
                 "product_id": {
                     "type": "integer",
                     "example": 1
-                }
-            }
-        },
-        "internal_handler.LoginReq": {
-            "type": "object",
-            "required": [
-                "email",
-                "password"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_handler.RegisterReq": {
-            "type": "object",
-            "required": [
-                "email",
-                "password"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_handler.UpdateProfileReq": {
-            "type": "object",
-            "properties": {
-                "address": {
-                    "type": "string"
-                },
-                "full_name": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
                 }
             }
         }

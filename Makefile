@@ -1,4 +1,4 @@
-.PHONY: run-infra build-services run-services stop-services start status clean generate-proto
+.PHONY: run-infra build-services run-services stop-services start status clean generate-proto swagger
 
 # Starts your databases, Kafka, Jaeger, etc.
 run-infra:
@@ -59,3 +59,7 @@ generate-proto:
 	--go_out=pb --go_opt=paths=source_relative \
 	--go-grpc_out=pb --go-grpc_opt=paths=source_relative \
 	pb/*.proto
+
+generate-swagger:
+	@echo "Generating Swagger docs..."
+	cd api-gateway/cmd && swag init -g main.go -d .,../internal/handler,../internal/dto --parseDependency --parseInternal -o ../docs

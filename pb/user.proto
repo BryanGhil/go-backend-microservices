@@ -10,23 +10,50 @@ service UserService {
   rpc UpdateProfile (UpdateProfileRequest) returns (UpdateProfileResponse);
 }
 
-message RegisterRequest { string email = 1; string password = 2; }
-message RegisterResponse { int64 user_id = 1; }
+message RegisterRequest { 
+  string email = 1; 
+  string password = 2; 
+  string full_name = 3;  
+  string role = 4;       // "buyer" or "seller"
+  
+  // Seller-specific field (Required if role == "seller")
+  string shop_name = 5;  
+}
 
-message LoginRequest { string email = 1; string password = 2; }
-message LoginResponse { string token = 1; } // Returns the Redis session token
+message RegisterResponse { 
+  int64 user_id = 1; 
+}
 
-message VerifySessionRequest { string token = 1; }
+message LoginRequest { 
+  string email = 1; 
+  string password = 2; 
+}
+
+message LoginResponse { 
+  string token = 1; 
+}
+
+message VerifySessionRequest { 
+  string token = 1; 
+}
+
 message VerifySessionResponse { 
   int64 user_id = 1; 
-  string role = 2;
+  string role = 2;      
   bool is_valid = 3;
-  }
+}
 
 message UpdateProfileRequest {
   int64 user_id = 1;
   string full_name = 2;
   string phone = 3;
   string address = 4;
+  
+  // Seller-specific updates
+  string shop_name = 5;
+  string shop_description = 6;
 }
-message UpdateProfileResponse { bool success = 1; }
+
+message UpdateProfileResponse { 
+  bool success = 1; 
+}
