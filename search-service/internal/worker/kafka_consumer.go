@@ -2,8 +2,8 @@ package worker
 
 import (
 	"context"
-	"ecommerce/search-service/pkg/tracing"
 	"ecommerce/search-service/internal/domain"
+	"ecommerce/search-service/pkg/tracing"
 	"encoding/json"
 	"log"
 
@@ -25,7 +25,6 @@ func (c *KafkaConsumer) Start(ctx context.Context) {
 	tracer := otel.Tracer("search-consumer")
 
 	for {
-		// This blocks until a new message arrives
 		m, err := c.reader.ReadMessage(ctx)
 		if err != nil {
 			log.Printf("Error reading message: %v", err)
@@ -34,25 +33,26 @@ func (c *KafkaConsumer) Start(ctx context.Context) {
 
 		func() {
 			linkedCtx := tracing.ExtractKafkaContext(context.Background(), m.Headers)
-
-			// 2. Start the span using the linked context
 			spanCtx, span := tracer.Start(linkedCtx, "ConsumeKafkaMessage: "+string(m.Key))
-			defer span.End() // Safely closes when the function finishes
+			defer span.End()
 
-			if string(m.Key) == "product-created" {
-				var product domain.Product
-				if err := json.Unmarshal(m.Value, &product); err == nil {
-					// Save it to Elasticsearch!
-					err = c.repo.IndexProduct(spanCtx, &product)
-					if err != nil {
-						log.Printf("Failed to index product in ES: %v", err)
-					} else {
-						log.Printf("Successfully indexed product %d into Elasticsearch!", product.ID)
-					}
-				}
+			// 1. Unmarshal into the Envelope first
+			var envelope domain.ProductEventEnvelope
+			if err := json.Unmarshal(m.Value, &envelope); err != nil {
+				log.Printf("Failed to unmarshal event envelope: %v", err)
+				return
 			}
 
+			// 2. Check the Event Type
+			if envelope.EventType == "product_created" {
+				// 3. Index the actual product data inside the envelope
+				err = c.repo.IndexProduct(spanCtx, envelope.Data)
+				if err != nil {
+					log.Printf("Failed to index product %d in ES: %v", envelope.Data.ID, err)
+				} else {
+					log.Printf("Successfully indexed product %d into Elasticsearch!", envelope.Data.ID)
+				}
+			}
 		}()
-
 	}
 }

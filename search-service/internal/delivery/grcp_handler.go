@@ -16,7 +16,17 @@ func NewSearchGrpcHandler(repo domain.SearchRepository) *SearchGrpcHandler {
 }
 
 func (h *SearchGrpcHandler) SearchProducts(ctx context.Context, req *pb.SearchRequest) (*pb.SearchResponse, error) {
-	results, err := h.repo.Search(ctx, req.GetQuery())
+	limit := req.GetLimit()
+	if limit <= 0 || limit > 100 {
+		limit = 10
+	}
+
+	offset := req.GetOffset()
+	if offset < 0 {
+		offset = 0
+	}
+
+	results, totalCount, err := h.repo.Search(ctx, req.GetQuery(), limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -24,12 +34,20 @@ func (h *SearchGrpcHandler) SearchProducts(ctx context.Context, req *pb.SearchRe
 	var pbProducts []*pb.Product
 	for _, p := range results {
 		pbProducts = append(pbProducts, &pb.Product{
-			Id: p.ID, 
-			Name: p.Name, 
-			Price: float64(p.Price),
+			Id:          p.ID,
+			SellerId:    p.SellerID,
+			Name:        p.Name,
+			Description: p.Description,
+			Category:    p.Category,
+			Price:       p.Price, // Float64 now matches the proto double
+			ImageUrl:    p.ImageURL,
+			IsActive:    p.IsActive,
 		})
 	}
+
+	// Assuming you added total_count to the SearchResponse in product.proto
 	return &pb.SearchResponse{
-		Products: pbProducts,
-		}, nil
+		Products:   pbProducts,
+		TotalCount: totalCount,
+	}, nil
 }
