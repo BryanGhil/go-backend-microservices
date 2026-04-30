@@ -16,16 +16,46 @@ import (
 	_ "github.com/lib/pq"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
+
+	// --- NEW MIGRATION IMPORTS ---
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
+
+func runDBMigrations(db *sql.DB) {
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	if err != nil {
+		log.Fatalf("Could not create postgres driver for migration: %v", err)
+	}
+
+	// Tell it to look in the "db/migrations" folder
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://user-service/db/migrations",
+		"postgres", driver)
+	if err != nil {
+		log.Fatalf("Could not initialize migrate instance: %v", err)
+	}
+
+	// Run the UP migrations
+	err = m.Up()
+	if err != nil && err != migrate.ErrNoChange {
+		log.Fatalf("Could not run up migrations: %v", err)
+	}
+
+	log.Println("Database migrations applied successfully!")
+}
 
 func main() {
 	// --- 1. CONNECT TO POSTGRES ---
-	dsn := "host=localhost port=5433 user=postgres password=postgres dbname=ecommerce_db sslmode=disable"
+	dsn := "host=localhost port=5433 user=postgres password=postgres dbname=user_db sslmode=disable"
 	pgDB, err := sql.Open("postgres", dsn)
 	if err != nil {
 		log.Fatalf("failed to connect to postgres: %v", err)
 	}
 	defer pgDB.Close()
+
+	runDBMigrations(pgDB)
 
 	// --- 2. CONNECT TO REDIS ---
 	// Assuming your Docker Redis is running on the default port 6379
@@ -37,9 +67,9 @@ func main() {
 	defer redisClient.Close()
 
 	// --- 3. WIRE UP CLEAN ARCHITECTURE ---
-	
+
 	// A. Initialize Repositories (One for Postgres, One for Redis)
-	userRepo := repository.NewPostgresUserRepo(pgDB) // Ensure you have this struct built in your repo folder!
+	userRepo := repository.NewPostgresUserRepo(pgDB)           // Ensure you have this struct built in your repo folder!
 	sessionRepo := repository.NewRedisSessionRepo(redisClient) // Ensure you have this struct built in your repo folder!
 
 	// B. Initialize UseCase (Pass BOTH repos into the constructor)

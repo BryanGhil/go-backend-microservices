@@ -17,12 +17,46 @@ import (
 	"github.com/segmentio/kafka-go"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
+
+	// --- NEW MIGRATION IMPORTS ---
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
+
+func runDBMigrations(db *sql.DB) {
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	if err != nil {
+		log.Fatalf("Could not create postgres driver for migration: %v", err)
+	}
+
+	// Tell it to look in the "db/migrations" folder
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://inventory-service/db/migrations",
+		"postgres", driver)
+	if err != nil {
+		log.Fatalf("Could not initialize migrate instance: %v", err)
+	}
+
+	// Run the UP migrations
+	err = m.Up()
+	if err != nil && err != migrate.ErrNoChange {
+		log.Fatalf("Could not run up migrations: %v", err)
+	}
+
+	log.Println("Database migrations applied successfully!")
+}
 
 func main() {
 	// 1. Postgres
-	dsn := "host=localhost port=5433 user=postgres password=postgres dbname=ecommerce_db sslmode=disable"
-	db, _ := sql.Open("postgres", dsn)
+	dsn := "host=localhost port=5433 user=postgres password=postgres dbname=inventory_db sslmode=disable"
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		log.Fatalf("failed to connect to postgres: %v", err)
+	}
+	defer db.Close()
+
+	runDBMigrations(db)
 
 	// CREATE TABLE IF NOT EXISTS inventory (product_id INT PRIMARY KEY, stock INT);
 
@@ -50,7 +84,7 @@ func main() {
 	go consumer.Start(context.Background())
 
 	// 6. Start gRPC Server
-	grpcHandler := delivery.NewInventoryGrpcHandler(uc) 
+	grpcHandler := delivery.NewInventoryGrpcHandler(uc)
 	lis, _ := net.Listen("tcp", ":9005") // Port 9005
 
 	shutdown := tracing.InitTracer("inventory-service")
@@ -58,7 +92,7 @@ func main() {
 
 	grpcServer := grpc.NewServer(grpc.StatsHandler(otelgrpc.NewServerHandler()))
 	pb.RegisterInventoryServiceServer(grpcServer, grpcHandler)
-	
+
 	log.Println("Inventory Service running on port :9005")
 	grpcServer.Serve(lis)
 }

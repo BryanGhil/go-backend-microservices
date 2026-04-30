@@ -50,8 +50,12 @@ func runDBMigrations(db *sql.DB) {
 
 func main() {
 	// 1. Postgres
-	dsn := "host=localhost port=5433 user=postgres password=postgres dbname=ecommerce_db sslmode=disable"
-	db, _ := sql.Open("postgres", dsn)
+	dsn := "host=localhost port=5433 user=postgres password=postgres dbname=order_db sslmode=disable"
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		log.Fatalf("failed to connect to postgres: %v", err)
+	}
+	defer db.Close()
 
 	runDBMigrations(db)
 

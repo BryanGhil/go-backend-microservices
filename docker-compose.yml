@@ -4,10 +4,11 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: ecommerce_db
     ports:
       - "5433:5432"
     restart: always
+    volumes:
+    - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d ecommerce_db"]
       interval: 5s
@@ -47,6 +48,7 @@ services:
     image: confluentinc/cp-kafka:7.5.0
     depends_on:
       - zookeeper
+    restart: on-failure
     ports:
       - "9092:9092"
     environment:
