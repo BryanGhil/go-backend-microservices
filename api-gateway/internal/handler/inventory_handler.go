@@ -1,11 +1,14 @@
 package handler
 
 import (
+	"ecommerce/api-gateway/internal/dto"
+	"ecommerce/api-gateway/pkg/utils"
 	"ecommerce/pb"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc/status"
 )
 
 type InventoryHandler struct {
@@ -18,12 +21,8 @@ func NewInventoryHandler(client pb.InventoryServiceClient) *InventoryHandler {
 
 func (h *InventoryHandler) RegisterRoutes(router *gin.RouterGroup) {
 	router.GET("/inventory/:id", h.GetStock)
-	router.POST("/inventory/add", h.AddStock)
-}
-
-type AddStockReq struct {
-	ProductID int64 `json:"product_id" example:"1"`
-	Quantity  int32 `json:"quantity" example:"50"`
+	// Note: You should likely place this under an Admin/Seller protected route group in main.go
+	router.POST("/inventory/add", h.AddStock) 
 }
 
 // @Summary Get Product Stock
@@ -31,37 +30,53 @@ type AddStockReq struct {
 // @Produce json
 // @Param id path int true "Product ID"
 // @Success 200 {object} map[string]interface{}
+// @Failure 404 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
 // @Router /api/inventory/{id} [get]
 func (h *InventoryHandler) GetStock(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	
 	res, err := h.client.GetStock(c.Request.Context(), &pb.GetStockRequest{ProductId: id})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		// Use status.Convert to extract the clean message from gRPC
+		utils.ErrorResponse(c, http.StatusInternalServerError, status.Convert(err).Message())
 		return
 	}
-	c.JSON(http.StatusOK, res)
+
+	utils.SuccessResponse(c, http.StatusOK, "Stock retrieved successfully", gin.H{
+		"product_id": id,
+		"stock":      res.Stock,
+	})
 }
 
 // @Summary Add Physical Stock
 // @Tags Inventory
 // @Accept json
 // @Produce json
-// @Param request body AddStockReq true "Stock Details"
+// @Param request body dto.AddStockReq true "Stock Details"
 // @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
 // @Router /api/inventory/add [post]
 func (h *InventoryHandler) AddStock(c *gin.Context) {
-	var req AddStockReq
+	var req dto.AddStockReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid JSON format or missing fields")
 		return
 	}
-	res, err := h.client.AddStock(c.Request.Context(), &pb.AddStockRequest{
+
+	_, err := h.client.AddStock(c.Request.Context(), &pb.AddStockRequest{
 		ProductId: req.ProductID,
 		Quantity:  req.Quantity,
 	})
+	
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, http.StatusInternalServerError, status.Convert(err).Message())
 		return
 	}
-	c.JSON(http.StatusOK, res)
+
+	utils.SuccessResponse(c, http.StatusOK, "Stock added successfully", gin.H{
+		"product_id":     req.ProductID,
+		"added_quantity": req.Quantity,
+	})
 }
