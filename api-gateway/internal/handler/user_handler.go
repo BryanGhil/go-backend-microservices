@@ -100,7 +100,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 // @Router /api/users/profile [put]
 func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	// Matches the key set in the AuthMiddleware
-	userID := c.GetInt64("user_id") 
+	userID := c.GetInt64("userID") 
 	
 	var req dto.UpdateProfileReq
 	if err := c.ShouldBindJSON(&req); err != nil {

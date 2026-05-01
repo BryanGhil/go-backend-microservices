@@ -34,6 +34,7 @@ func (h *ProductHandler) RegisterRoutes(router *gin.RouterGroup) {
 // @Tags Products
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param request body dto.ProductReq true "Product Details"
 // @Success 201 {object} dto.IDResponse
 // @Router /api/products [post]
@@ -44,7 +45,7 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 		utils.ErrorResponse(c, http.StatusForbidden, "Only sellers can create products")
 		return
 	}
-	userID := c.GetInt64("user_id")
+	userID := c.GetInt64("userID")
 
 	var reqBody dto.ProductReq
 	if err := c.ShouldBindJSON(&reqBody); err != nil {
@@ -158,10 +159,11 @@ func (h *ProductHandler) GetProduct(c *gin.Context) {
 
 // @Summary Update a product
 // @Tags Products
+// @Security BearerAuth
 // @Router /api/products/{id} [put]
 func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-	userID := c.GetInt64("user_id")
+	userID := c.GetInt64("userID")
 	role := c.GetString("role")
 
 	// 1. Ownership Check: Fetch the product first
@@ -202,10 +204,11 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 
 // @Summary Delete a product
 // @Tags Products
+// @Security BearerAuth
 // @Router /api/products/{id} [delete]
 func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-	userID := c.GetInt64("user_id")
+	userID := c.GetInt64("userID")
 	role := c.GetString("role")
 
 	// 1. Ownership Check

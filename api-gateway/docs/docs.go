@@ -299,6 +299,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Adds a new product to the catalog. Only Sellers and Admins can do this.",
                 "consumes": [
                     "application/json"
@@ -352,6 +357,11 @@ const docTemplate = `{
                 "responses": {}
             },
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "tags": [
                     "Products"
                 ],
@@ -359,6 +369,11 @@ const docTemplate = `{
                 "responses": {}
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "tags": [
                     "Products"
                 ],
@@ -579,10 +594,12 @@ const docTemplate = `{
             ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "zzz@zzz.com"
                 },
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "12345678"
                 }
             }
         },

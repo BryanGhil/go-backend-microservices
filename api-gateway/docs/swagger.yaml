@@ -42,8 +42,10 @@ definitions:
   dto.LoginReq:
     properties:
       email:
+        example: zzz@zzz.com
         type: string
       password:
+        example: "12345678"
         type: string
     required:
     - email
@@ -363,12 +365,16 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/dto.IDResponse'
+      security:
+      - BearerAuth: []
       summary: Create a new product
       tags:
       - Products
   /api/products/{id}:
     delete:
       responses: {}
+      security:
+      - BearerAuth: []
       summary: Delete a product
       tags:
       - Products
@@ -387,6 +393,8 @@ paths:
       - Products
     put:
       responses: {}
+      security:
+      - BearerAuth: []
       summary: Update a product
       tags:
       - Products
