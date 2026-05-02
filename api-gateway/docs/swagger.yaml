@@ -372,7 +372,37 @@ paths:
       - Products
   /api/products/{id}:
     delete:
-      responses: {}
+      description: Deletes a product from the catalog. Only the owning Seller or an
+        Admin can delete.
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
       security:
       - BearerAuth: []
       summary: Delete a product
@@ -392,7 +422,50 @@ paths:
       tags:
       - Products
     put:
-      responses: {}
+      consumes:
+      - application/json
+      description: Updates an existing product's details. Only the owning Seller or
+        an Admin can update.
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Product Details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ProductReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
       security:
       - BearerAuth: []
       summary: Update a product

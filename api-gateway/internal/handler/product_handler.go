@@ -20,13 +20,13 @@ func NewProductHandler(client pb.ProductServiceClient) *ProductHandler {
 	return &ProductHandler{client: client}
 }
 
-func (h *ProductHandler) RegisterRoutes(router *gin.RouterGroup) {
+func (h *ProductHandler) RegisterRoutes(public *gin.RouterGroup, protected *gin.RouterGroup) {
 	// Assuming you have an AuthMiddleware that sets "user_id" and "role" in the context
-	router.POST("/products", h.CreateProduct)
-	router.GET("/products", h.ListProducts)
-	router.GET("/products/:id", h.GetProduct)
-	router.PUT("/products/:id", h.UpdateProduct)
-	router.DELETE("/products/:id", h.DeleteProduct)
+	protected.POST("/products", h.CreateProduct)
+	public.GET("/products", h.ListProducts)
+	public.GET("/products/:id", h.GetProduct)
+	protected.PUT("/products/:id", h.UpdateProduct)
+	protected.DELETE("/products/:id", h.DeleteProduct)
 }
 
 // @Summary Create a new product
@@ -158,8 +158,18 @@ func (h *ProductHandler) GetProduct(c *gin.Context) {
 }
 
 // @Summary Update a product
+// @Description Updates an existing product's details. Only the owning Seller or an Admin can update.
 // @Tags Products
+// @Accept json
+// @Produce json
 // @Security BearerAuth
+// @Param id path int true "Product ID"
+// @Param request body dto.ProductReq true "Product Details"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 403 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/products/{id} [put]
 func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -203,8 +213,15 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 }
 
 // @Summary Delete a product
+// @Description Deletes a product from the catalog. Only the owning Seller or an Admin can delete.
 // @Tags Products
+// @Produce json
 // @Security BearerAuth
+// @Param id path int true "Product ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 403 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/products/{id} [delete]
 func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)

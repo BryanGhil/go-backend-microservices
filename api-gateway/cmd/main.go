@@ -91,7 +91,7 @@ func main() {
 
 	// 4. Register All Routes
 	userH.RegisterRoutes(api, protected)
-	productH.RegisterRoutes(api)
+	productH.RegisterRoutes(api, protected)
 	searchH.RegisterRoutes(api)
 	orderH.RegisterRoutes(api)
 	inventoryH.RegisterRoutes(api)
