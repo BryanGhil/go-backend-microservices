@@ -15,6 +15,197 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/auth/google": {
+            "post": {
+                "description": "Authenticates via Google ID token. Auto-captures device metadata.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Google OAuth Login",
+                "parameters": [
+                    {
+                        "description": "Google ID Token and client type",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.GoogleLoginReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.TokenResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/logout": {
+            "post": {
+                "description": "Logs out the current session and clears the HttpOnly cookie",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Logout current device",
+                "parameters": [
+                    {
+                        "description": "Refresh Token (Required for mobile)",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LogoutReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/refresh": {
+            "post": {
+                "description": "Rotates the refresh token and captures new IP if the user changed Wi-Fi.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Refresh Access Token",
+                "parameters": [
+                    {
+                        "description": "Refresh Token (Required for mobile)",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RefreshTokenReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.TokenResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/resend-otp": {
+            "post": {
+                "description": "Sends a new 6-digit OTP to the user's email",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Resend OTP",
+                "parameters": [
+                    {
+                        "description": "User Email",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ResendOTPReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/verify-otp": {
+            "post": {
+                "description": "Verifies the 6-digit OTP and issues JWT tokens based on client_type.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Step 2: Verify OTP",
+                "parameters": [
+                    {
+                        "description": "Email, OTP, and client type",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.VerifyOTPReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.TokenResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/checkout": {
             "post": {
                 "security": [
@@ -144,7 +335,7 @@ const docTemplate = `{
         },
         "/api/login": {
             "post": {
-                "description": "Authenticates a user and returns a JWT/Session token",
+                "description": "Validates credentials and sends a 6-digit OTP to the user's email.",
                 "consumes": [
                     "application/json"
                 ],
@@ -152,9 +343,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Users"
+                    "Auth"
                 ],
-                "summary": "Login user",
+                "summary": "Step 1: Login user",
                 "parameters": [
                     {
                         "description": "User credentials",
@@ -170,19 +361,21 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.TokenResponse"
+                            "$ref": "#/definitions/dto.LoginOTPResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid JSON format",
                         "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Invalid credentials",
                         "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -630,6 +823,87 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/users/sessions": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Lists all devices currently logged into this account",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get Active Sessions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.SessionInfoResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Logs the user out of EVERY device",
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Revoke All Sessions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/sessions/{session_id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Logs out a specific device",
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Revoke Specific Session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "session_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -664,6 +938,27 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.GoogleLoginReq": {
+            "type": "object",
+            "required": [
+                "client_type",
+                "id_token"
+            ],
+            "properties": {
+                "client_type": {
+                    "type": "string",
+                    "enum": [
+                        "web",
+                        "mobile"
+                    ],
+                    "example": "mobile"
+                },
+                "id_token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJSUzI1NiIs..."
+                }
+            }
+        },
         "dto.IDData": {
             "type": "object",
             "properties": {
@@ -689,6 +984,19 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.LoginOTPResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "OTP sent to email"
+                },
+                "requires_otp": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
         "dto.LoginReq": {
             "type": "object",
             "required": [
@@ -703,6 +1011,16 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "example": "12345678"
+                }
+            }
+        },
+        "dto.LogoutReq": {
+            "type": "object",
+            "properties": {
+                "refresh_token": {
+                    "description": "Not required because web clients send it via cookie",
+                    "type": "string",
+                    "example": "your-uuid-refresh-token"
                 }
             }
         },
@@ -776,6 +1094,15 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.RefreshTokenReq": {
+            "type": "object",
+            "properties": {
+                "refresh_token": {
+                    "type": "string",
+                    "example": "your-uuid-refresh-token"
+                }
+            }
+        },
         "dto.RegisterReq": {
             "type": "object",
             "required": [
@@ -785,30 +1112,73 @@ const docTemplate = `{
             ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "zzz@zzz.com"
                 },
                 "full_name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Zzz Zzz"
                 },
                 "password": {
                     "type": "string",
-                    "minLength": 6
+                    "minLength": 6,
+                    "example": "12345678"
                 },
                 "role": {
                     "description": "Optional: defaults to \"buyer\" in usecase",
-                    "type": "string"
+                    "type": "string",
+                    "example": "seller"
                 },
                 "shop_name": {
                     "description": "Required if role is \"seller\"",
-                    "type": "string"
+                    "type": "string",
+                    "example": "Zz Shop"
+                }
+            }
+        },
+        "dto.ResendOTPReq": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "zzz@zzz.com"
+                }
+            }
+        },
+        "dto.SessionInfoResponse": {
+            "type": "object",
+            "properties": {
+                "client_ip": {
+                    "type": "string",
+                    "example": "192.168.1.5"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-05-12T15:04:05Z"
+                },
+                "session_id": {
+                    "type": "string",
+                    "example": "uuid-string"
+                },
+                "user_agent": {
+                    "type": "string",
+                    "example": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)..."
                 }
             }
         },
         "dto.TokenResponse": {
             "type": "object",
             "properties": {
-                "token": {
-                    "type": "string"
+                "access_token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIs..."
+                },
+                "refresh_token": {
+                    "type": "string",
+                    "example": "your-uuid-refresh-token"
                 }
             }
         },
@@ -816,21 +1186,26 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "address": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "ZZ Street"
                 },
                 "full_name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Zzz"
                 },
                 "phone": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "0812345678"
                 },
                 "shop_description": {
                     "description": "For Sellers",
-                    "type": "string"
+                    "type": "string",
+                    "example": "Welcome to ZZZ Shop"
                 },
                 "shop_name": {
                     "description": "For Sellers",
-                    "type": "string"
+                    "type": "string",
+                    "example": "ZZ Shop"
                 }
             }
         },
@@ -839,6 +1214,32 @@ const docTemplate = `{
             "properties": {
                 "user_id": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.VerifyOTPReq": {
+            "type": "object",
+            "required": [
+                "client_type",
+                "email",
+                "otp"
+            ],
+            "properties": {
+                "client_type": {
+                    "type": "string",
+                    "enum": [
+                        "web",
+                        "mobile"
+                    ],
+                    "example": "web"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "zzz@zzz.com"
+                },
+                "otp": {
+                    "type": "string",
+                    "example": "123456"
                 }
             }
         },

@@ -54,8 +54,24 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      # 1. Map out our two networks (Internal for Docker, External for Go/WSL)
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      # 2. Tell Docker containers to use 29092, and WSL apps to use 9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:9092
+      # 3. Tell Kafka brokers how to talk to each other
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  redpanda-console:
+    image: docker.redpanda.com/redpandadata/console:latest
+    container_name: redpanda-console
+    ports:
+      - "8081:8080"
+    environment:
+      # Now we tell Redpanda to use the INTERNAL Docker listener!
+      KAFKA_BROKERS: "kafka:29092"
+    depends_on:
+      - kafka
 
   jaeger:
     image: jaegertracing/all-in-one:1.57.0 # Pinned to a highly stable, widely used release

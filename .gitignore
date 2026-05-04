@@ -10,7 +10,7 @@ _test
 *.test
 *.out
 vendor/
-.env
+**.env
 .DS_Store
 Thumbs.db
 logs/

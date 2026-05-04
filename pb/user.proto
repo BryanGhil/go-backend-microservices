@@ -5,18 +5,28 @@ option go_package = "ecommerce/pb";
 
 service UserService {
   rpc Register (RegisterRequest) returns (RegisterResponse);
+  
+  // Auth & OTP
   rpc Login (LoginRequest) returns (LoginResponse);
-  rpc VerifySession (VerifySessionRequest) returns (VerifySessionResponse);
+  rpc VerifyOTP (VerifyOTPRequest) returns (TokenResponse);
+  rpc GoogleLogin (GoogleLoginRequest) returns (TokenResponse);
+  rpc RefreshToken (RefreshTokenRequest) returns (TokenResponse);
+  
+  // Profile & Session Management
   rpc UpdateProfile (UpdateProfileRequest) returns (UpdateProfileResponse);
+  rpc GetUserSessions (GetSessionsRequest) returns (GetSessionsResponse);
+  rpc RevokeSession (RevokeSessionRequest) returns (SuccessResponse);
+  rpc RevokeAllSessions (RevokeAllSessionsRequest) returns (SuccessResponse);
+
+  rpc ResendOTP (ResendOTPRequest) returns (SuccessResponse);
+  rpc Logout (LogoutRequest) returns (SuccessResponse);
 }
 
 message RegisterRequest { 
   string email = 1; 
   string password = 2; 
   string full_name = 3;  
-  string role = 4;       // "buyer" or "seller"
-  
-  // Seller-specific field (Required if role == "seller")
+  string role = 4;       
   string shop_name = 5;  
 }
 
@@ -29,18 +39,32 @@ message LoginRequest {
   string password = 2; 
 }
 
-message LoginResponse { 
-  string token = 1; 
+message LoginResponse {
+  bool requires_otp = 1;
 }
 
-message VerifySessionRequest { 
-  string token = 1; 
+message VerifyOTPRequest {
+  string email = 1;
+  string otp = 2;
+  string user_agent = 3;
+  string client_ip = 4;
 }
 
-message VerifySessionResponse { 
-  int64 user_id = 1; 
-  string role = 2;      
-  bool is_valid = 3;
+message GoogleLoginRequest {
+    string id_token = 1; 
+    string user_agent = 2;
+    string client_ip = 3;
+}
+
+message RefreshTokenRequest {
+    string refresh_token = 1;
+    string user_agent = 2;
+    string client_ip = 3;
+}
+
+message TokenResponse {
+    string access_token = 1;
+    string refresh_token = 2;
 }
 
 message UpdateProfileRequest {
@@ -48,12 +72,48 @@ message UpdateProfileRequest {
   string full_name = 2;
   string phone = 3;
   string address = 4;
-  
-  // Seller-specific updates
   string shop_name = 5;
   string shop_description = 6;
 }
 
 message UpdateProfileResponse { 
   bool success = 1; 
+}
+
+// --- Session Management Messages ---
+
+message GetSessionsRequest {
+  int64 user_id = 1;
+}
+
+message SessionInfo {
+  string session_id = 1;
+  string user_agent = 2;
+  string client_ip = 3;
+  string created_at = 4;
+}
+
+message GetSessionsResponse {
+  repeated SessionInfo sessions = 1;
+}
+
+message RevokeSessionRequest {
+  int64 user_id = 1;
+  string session_id = 2;
+}
+
+message RevokeAllSessionsRequest {
+  int64 user_id = 1;
+}
+
+message SuccessResponse {
+  bool success = 1;
+}
+
+message ResendOTPRequest {
+  string email = 1;
+}
+
+message LogoutRequest {
+  string refresh_token = 1;
 }

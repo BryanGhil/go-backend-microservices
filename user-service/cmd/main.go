@@ -5,14 +5,17 @@ import (
 	"database/sql"
 	"log"
 	"net"
+	"os"
 
 	"ecommerce/pb"
 	"ecommerce/user-service/internal/delivery"
 	"ecommerce/user-service/internal/repository"
 	"ecommerce/user-service/internal/usecase"
+	email "ecommerce/user-service/pkg/sender"
 	"ecommerce/user-service/pkg/tracing"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
@@ -47,6 +50,18 @@ func runDBMigrations(db *sql.DB) {
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Warning: No .env file found. Falling back to system environment variables.")
+	}
+
+	jwtSecret := os.Getenv("JWT_SECRET")
+	googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
+	gmailUser := os.Getenv("GMAIL_USER")
+	gmailPass := os.Getenv("GMAIL_APP_PASSWORD")
+
+	emailSender := email.NewGmailSender(gmailUser, gmailPass)
+
 	// --- 1. CONNECT TO POSTGRES ---
 	dsn := "host=localhost port=5433 user=postgres password=postgres dbname=user_db sslmode=disable"
 	pgDB, err := sql.Open("postgres", dsn)
@@ -73,7 +88,7 @@ func main() {
 	sessionRepo := repository.NewRedisSessionRepo(redisClient) // Ensure you have this struct built in your repo folder!
 
 	// B. Initialize UseCase (Pass BOTH repos into the constructor)
-	userUC := usecase.NewUserUseCase(userRepo, sessionRepo)
+	userUC := usecase.NewUserUseCase(userRepo, sessionRepo, jwtSecret, googleClientID, emailSender)
 
 	// C. Initialize Delivery Handler (Pass the UseCase into the gRPC handler)
 	grpcHandler := delivery.NewUserGrpcHandler(userUC)

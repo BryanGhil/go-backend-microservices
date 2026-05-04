@@ -87,7 +87,7 @@ func main() {
 	
 	// Protected Group (Requires Auth)
 	protected := api.Group("/")
-	protected.Use(middleware.AuthMiddleware(pb.NewUserServiceClient(connUser)))
+	protected.Use(middleware.AuthMiddleware())
 
 	// 4. Register All Routes
 	userH.RegisterRoutes(api, protected)

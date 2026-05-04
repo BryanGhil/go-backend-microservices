@@ -22,6 +22,21 @@ definitions:
         example: false
         type: boolean
     type: object
+  dto.GoogleLoginReq:
+    properties:
+      client_type:
+        enum:
+        - web
+        - mobile
+        example: mobile
+        type: string
+      id_token:
+        example: eyJhbGciOiJSUzI1NiIs...
+        type: string
+    required:
+    - client_type
+    - id_token
+    type: object
   dto.IDData:
     properties:
       id:
@@ -39,6 +54,15 @@ definitions:
         example: true
         type: boolean
     type: object
+  dto.LoginOTPResponse:
+    properties:
+      message:
+        example: OTP sent to email
+        type: string
+      requires_otp:
+        example: true
+        type: boolean
+    type: object
   dto.LoginReq:
     properties:
       email:
@@ -50,6 +74,13 @@ definitions:
     required:
     - email
     - password
+    type: object
+  dto.LogoutReq:
+    properties:
+      refresh_token:
+        description: Not required because web clients send it via cookie
+        example: your-uuid-refresh-token
+        type: string
     type: object
   dto.ProductData:
     properties:
@@ -101,50 +132,112 @@ definitions:
     - name
     - price
     type: object
+  dto.RefreshTokenReq:
+    properties:
+      refresh_token:
+        example: your-uuid-refresh-token
+        type: string
+    type: object
   dto.RegisterReq:
     properties:
       email:
+        example: zzz@zzz.com
         type: string
       full_name:
+        example: Zzz Zzz
         type: string
       password:
+        example: "12345678"
         minLength: 6
         type: string
       role:
         description: 'Optional: defaults to "buyer" in usecase'
+        example: seller
         type: string
       shop_name:
         description: Required if role is "seller"
+        example: Zz Shop
         type: string
     required:
     - email
     - full_name
     - password
     type: object
+  dto.ResendOTPReq:
+    properties:
+      email:
+        example: zzz@zzz.com
+        type: string
+    required:
+    - email
+    type: object
+  dto.SessionInfoResponse:
+    properties:
+      client_ip:
+        example: 192.168.1.5
+        type: string
+      created_at:
+        example: "2024-05-12T15:04:05Z"
+        type: string
+      session_id:
+        example: uuid-string
+        type: string
+      user_agent:
+        example: Mozilla/5.0 (Windows NT 10.0; Win64; x64)...
+        type: string
+    type: object
   dto.TokenResponse:
     properties:
-      token:
+      access_token:
+        example: eyJhbGciOiJIUzI1NiIs...
+        type: string
+      refresh_token:
+        example: your-uuid-refresh-token
         type: string
     type: object
   dto.UpdateProfileReq:
     properties:
       address:
+        example: ZZ Street
         type: string
       full_name:
+        example: Zzz
         type: string
       phone:
+        example: "0812345678"
         type: string
       shop_description:
         description: For Sellers
+        example: Welcome to ZZZ Shop
         type: string
       shop_name:
         description: For Sellers
+        example: ZZ Shop
         type: string
     type: object
   dto.UserIDResponse:
     properties:
       user_id:
         type: integer
+    type: object
+  dto.VerifyOTPReq:
+    properties:
+      client_type:
+        enum:
+        - web
+        - mobile
+        example: web
+        type: string
+      email:
+        example: zzz@zzz.com
+        type: string
+      otp:
+        example: "123456"
+        type: string
+    required:
+    - client_type
+    - email
+    - otp
     type: object
   handler.CheckoutReq:
     properties:
@@ -162,6 +255,132 @@ info:
   title: E-Commerce Microservices API
   version: "1.0"
 paths:
+  /api/auth/google:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates via Google ID token. Auto-captures device metadata.
+      parameters:
+      - description: Google ID Token and client type
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GoogleLoginReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TokenResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Google OAuth Login
+      tags:
+      - Auth
+  /api/auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logs out the current session and clears the HttpOnly cookie
+      parameters:
+      - description: Refresh Token (Required for mobile)
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/dto.LogoutReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Logout current device
+      tags:
+      - Auth
+  /api/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Rotates the refresh token and captures new IP if the user changed
+        Wi-Fi.
+      parameters:
+      - description: Refresh Token (Required for mobile)
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/dto.RefreshTokenReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TokenResponse'
+      summary: Refresh Access Token
+      tags:
+      - Auth
+  /api/auth/resend-otp:
+    post:
+      consumes:
+      - application/json
+      description: Sends a new 6-digit OTP to the user's email
+      parameters:
+      - description: User Email
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ResendOTPReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Resend OTP
+      tags:
+      - Auth
+  /api/auth/verify-otp:
+    post:
+      consumes:
+      - application/json
+      description: Verifies the 6-digit OTP and issues JWT tokens based on client_type.
+      parameters:
+      - description: Email, OTP, and client type
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.VerifyOTPReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 'Step 2: Verify OTP'
+      tags:
+      - Auth
   /api/checkout:
     post:
       consumes:
@@ -248,7 +467,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Authenticates a user and returns a JWT/Session token
+      description: Validates credentials and sends a 6-digit OTP to the user's email.
       parameters:
       - description: User credentials
         in: body
@@ -262,18 +481,20 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.TokenResponse'
+            $ref: '#/definitions/dto.LoginOTPResponse'
         "400":
-          description: Bad Request
+          description: Invalid JSON format
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            additionalProperties: true
+            type: object
         "401":
-          description: Unauthorized
+          description: Invalid credentials
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Login user
+            additionalProperties: true
+            type: object
+      summary: 'Step 1: Login user'
       tags:
-      - Users
+      - Auth
   /api/orders/{id}:
     get:
       description: Check if an order is PENDING, COMPLETED, or CANCELLED
@@ -566,6 +787,56 @@ paths:
       security:
       - BearerAuth: []
       summary: Update User Profile
+      tags:
+      - Users
+  /api/users/sessions:
+    delete:
+      description: Logs the user out of EVERY device
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Revoke All Sessions
+      tags:
+      - Users
+    get:
+      description: Lists all devices currently logged into this account
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.SessionInfoResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Get Active Sessions
+      tags:
+      - Users
+  /api/users/sessions/{session_id}:
+    delete:
+      description: Logs out a specific device
+      parameters:
+      - description: Session ID
+        in: path
+        name: session_id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Revoke Specific Session
       tags:
       - Users
 securityDefinitions:
