@@ -4,6 +4,7 @@ import (
 	"ecommerce/api-gateway/internal/dto"
 	"ecommerce/api-gateway/pkg/utils"
 	"ecommerce/pb"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -20,15 +21,15 @@ func NewUserHandler(client pb.UserServiceClient) *UserHandler {
 
 func (h *UserHandler) RegisterRoutes(public *gin.RouterGroup, protected *gin.RouterGroup) {
 	// Public Auth Routes
-	public.POST("/register", h.Register)
-	public.POST("/login", h.Login)
+	public.POST("/auth/register", h.Register)
+	public.POST("/auth/login", h.Login)
 	public.POST("/auth/verify-otp", h.VerifyOTP) // NEW: Step 2 of Login
 	public.POST("/auth/google", h.GoogleLogin)
 	public.POST("/auth/refresh", h.RefreshToken)
 
 	// Protected User Routes
 	protected.PUT("/users/profile", h.UpdateProfile)
-	
+
 	// NEW: Protected Session Management Routes
 	protected.GET("/users/sessions", h.GetSessions)
 	protected.DELETE("/users/sessions/:session_id", h.RevokeSession)
@@ -40,14 +41,14 @@ func (h *UserHandler) RegisterRoutes(public *gin.RouterGroup, protected *gin.Rou
 
 // @Summary Register a new user
 // @Description Registers a new buyer or seller account
-// @Tags Users
+// @Tags Auth
 // @Accept json
 // @Produce json
 // @Param request body dto.RegisterReq true "User credentials and profile details"
 // @Success 201 {object} dto.UserIDResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/register [post]
+// @Router /api/auth/register [post]
 func (h *UserHandler) Register(c *gin.Context) {
 	var req dto.RegisterReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -67,10 +68,9 @@ func (h *UserHandler) Register(c *gin.Context) {
 		utils.ErrorResponse(c, http.StatusInternalServerError, status.Convert(err).Message())
 		return
 	}
-	
+
 	utils.SuccessResponse(c, http.StatusCreated, "User registered successfully", gin.H{"user_id": res.UserId})
 }
-
 
 // @Summary Update User Profile
 // @Description Updates the profile of the currently authenticated user
@@ -85,8 +85,8 @@ func (h *UserHandler) Register(c *gin.Context) {
 // @Router /api/users/profile [put]
 func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	// Matches the key set in the AuthMiddleware
-	userID := c.GetInt64("userID") 
-	
+	userID := c.GetInt64("userID")
+
 	var req dto.UpdateProfileReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid JSON format")
@@ -106,7 +106,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		utils.ErrorResponse(c, http.StatusInternalServerError, status.Convert(err).Message())
 		return
 	}
-	
+
 	utils.SuccessResponse(c, http.StatusOK, "Profile updated successfully", nil)
 }
 
@@ -119,7 +119,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 // @Success 200 {object} dto.LoginOTPResponse
 // @Failure 400 {object} map[string]interface{} "Invalid JSON format"
 // @Failure 401 {object} map[string]interface{} "Invalid credentials"
-// @Router /api/login [post]
+// @Router /api/auth/login [post]
 func (h *UserHandler) Login(c *gin.Context) {
 	var req dto.LoginReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -177,14 +177,26 @@ func (h *UserHandler) VerifyOTP(c *gin.Context) {
 	}
 
 	if req.ClientType == "web" {
-		c.SetCookie("refresh_token", res.RefreshToken, 7*24*60*60, "/api/auth", "localhost", true, true)
-		utils.SuccessResponse(c, http.StatusOK, "Login successful", gin.H{"access_token": res.AccessToken})
+		c.SetCookie("refresh_token", res.RefreshToken, 7*24*60*60, "/api/auth", "localhost", false, true)
+		utils.SuccessResponse(c, http.StatusOK, "Login successful", dto.TokenResponse{
+			AccessToken: res.AccessToken,
+			User: dto.TokenUserResponse{
+				UserId: res.UserId,
+				Email:  res.Email,
+				Role:   res.Role,
+			},
+		})
 		return
 	}
 
-	utils.SuccessResponse(c, http.StatusOK, "Login successful", gin.H{
-		"access_token":  res.AccessToken,
-		"refresh_token": res.RefreshToken,
+	utils.SuccessResponse(c, http.StatusOK, "Login successful", dto.TokenResponse{
+		AccessToken:  res.AccessToken,
+		RefreshToken: res.RefreshToken,
+		User: dto.TokenUserResponse{
+			UserId: res.UserId,
+			Email:  res.Email,
+			Role:   res.Role,
+		},
 	})
 }
 
@@ -216,14 +228,26 @@ func (h *UserHandler) GoogleLogin(c *gin.Context) {
 	}
 
 	if req.ClientType == "web" {
-		c.SetCookie("refresh_token", res.RefreshToken, 7*24*60*60, "/api/auth", "localhost", true, true)
-		utils.SuccessResponse(c, http.StatusOK, "Google Login successful", gin.H{"access_token": res.AccessToken})
+		c.SetCookie("refresh_token", res.RefreshToken, 7*24*60*60, "/api/auth", "localhost", false, true)
+		utils.SuccessResponse(c, http.StatusOK, "Login successful", dto.TokenResponse{
+			AccessToken: res.AccessToken,
+			User: dto.TokenUserResponse{
+				UserId: res.UserId,
+				Email:  res.Email,
+				Role:   res.Role,
+			},
+		})
 		return
 	}
 
-	utils.SuccessResponse(c, http.StatusOK, "Google Login successful", gin.H{
-		"access_token":  res.AccessToken,
-		"refresh_token": res.RefreshToken,
+	utils.SuccessResponse(c, http.StatusOK, "Login successful", dto.TokenResponse{
+		AccessToken:  res.AccessToken,
+		RefreshToken: res.RefreshToken,
+		User: dto.TokenUserResponse{
+			UserId: res.UserId,
+			Email:  res.Email,
+			Role:   res.Role,
+		},
 	})
 }
 
@@ -240,14 +264,20 @@ func (h *UserHandler) RefreshToken(c *gin.Context) {
 
 	var req dto.RefreshTokenReq
 	if err := c.ShouldBindJSON(&req); err == nil && req.RefreshToken != "" {
-		refreshToken = req.RefreshToken
-	}
-	if refreshToken == "" {
-		cookieToken, err := c.Cookie("refresh_token")
-		if err == nil {
-			refreshToken = cookieToken
-		}
-	}
+        refreshToken = req.RefreshToken
+        fmt.Println("[DEBUG] Found token in JSON body")
+    }
+
+    // 2. Try Cookie if JSON failed
+    if refreshToken == "" {
+        cookieToken, err := c.Cookie("refresh_token")
+        if err == nil {
+            refreshToken = cookieToken
+            fmt.Println("[DEBUG] Found token in Cookie ", refreshToken)
+        } else {
+            fmt.Printf("[DEBUG] Cookie check failed: %v\n", err)
+        }
+    }
 
 	if refreshToken == "" {
 		utils.ErrorResponse(c, http.StatusBadRequest, "Refresh token is required")
@@ -266,14 +296,26 @@ func (h *UserHandler) RefreshToken(c *gin.Context) {
 	}
 
 	if _, err := c.Cookie("refresh_token"); err == nil {
-		c.SetCookie("refresh_token", res.RefreshToken, 7*24*60*60, "/api/auth", "localhost", true, true)
-		utils.SuccessResponse(c, http.StatusOK, "Token refreshed", gin.H{"access_token": res.AccessToken})
+		c.SetCookie("refresh_token", res.RefreshToken, 7*24*60*60, "/api/auth", "localhost", false, true)
+		utils.SuccessResponse(c, http.StatusOK, "Token refreshed", dto.TokenResponse{
+			AccessToken: res.AccessToken,
+			User: dto.TokenUserResponse{
+				UserId: res.UserId,
+				Email:  res.Email,
+				Role:   res.Role,
+			},
+		})
 		return
 	}
 
-	utils.SuccessResponse(c, http.StatusOK, "Token refreshed", gin.H{
-		"access_token":  res.AccessToken,
-		"refresh_token": res.RefreshToken,
+	utils.SuccessResponse(c, http.StatusOK, "Login successful", dto.TokenResponse{
+		AccessToken:  res.AccessToken,
+		RefreshToken: res.RefreshToken,
+		User: dto.TokenUserResponse{
+			UserId: res.UserId,
+			Email:  res.Email,
+			Role:   res.Role,
+		},
 	})
 }
 
@@ -343,7 +385,7 @@ func (h *UserHandler) RevokeAllSessions(c *gin.Context) {
 
 	// Also clear the HttpOnly cookie for the current web device
 	c.SetCookie("refresh_token", "", -1, "/api/auth", "localhost", true, true)
-	
+
 	utils.SuccessResponse(c, http.StatusOK, "Successfully logged out of all devices", nil)
 }
 
@@ -410,7 +452,7 @@ func (h *UserHandler) Logout(c *gin.Context) {
 	})
 
 	// 4. Force the browser to delete the HttpOnly cookie by setting Max-Age to -1
-	c.SetCookie("refresh_token", "", -1, "/api/auth", "localhost", true, true)
+	c.SetCookie("refresh_token", "", -1, "/api/auth", "localhost", false, true)
 
 	utils.SuccessResponse(c, http.StatusOK, "Successfully logged out", nil)
 }

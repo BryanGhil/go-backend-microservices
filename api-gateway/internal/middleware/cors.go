@@ -11,7 +11,10 @@ import (
 func CORSMiddleware() gin.HandlerFunc {
 	return cors.New(cors.Config{
 		// 1. The exact URL of your frontend
-		AllowOrigins: []string{"http://127.0.0.1:5173"},
+		AllowOrigins: []string{
+			"http://localhost:5173",
+			"http://127.0.0.1:5173", // Add both!
+		},
 
 		// 2. The HTTP verbs your frontend is allowed to use
 		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},

@@ -6,7 +6,7 @@ type RegisterReq struct {
 	Email    string `json:"email" binding:"required,email" example:"zzz@zzz.com"`
 	Password string `json:"password" binding:"required,min=6" example:"12345678"`
 	FullName string `json:"full_name" binding:"required" example:"Zzz Zzz"`
-	Role     string `json:"role" example:"seller"`      // Optional: defaults to "buyer" in usecase
+	Role     string `json:"role" example:"seller"`       // Optional: defaults to "buyer" in usecase
 	ShopName string `json:"shop_name" example:"Zz Shop"` // Required if role is "seller"
 }
 
@@ -27,22 +27,29 @@ type GoogleLoginReq struct {
 }
 
 type RefreshTokenReq struct {
-	RefreshToken string `json:"refresh_token" example:"your-uuid-refresh-token"` 
+	RefreshToken string `json:"refresh_token" example:"your-uuid-refresh-token"`
 }
 
 type UpdateProfileReq struct {
 	FullName        string `json:"full_name" example:"Zzz"`
 	Phone           string `json:"phone" example:"0812345678"`
 	Address         string `json:"address" example:"ZZ Street"`
-	ShopName        string `json:"shop_name" example:"ZZ Shop"`               // For Sellers
+	ShopName        string `json:"shop_name" example:"ZZ Shop"`                    // For Sellers
 	ShopDescription string `json:"shop_description" example:"Welcome to ZZZ Shop"` // For Sellers
 }
 
 // --- Responses ---
 
 type TokenResponse struct {
-	AccessToken  string `json:"access_token" example:"eyJhbGciOiJIUzI1NiIs..."`
-	RefreshToken string `json:"refresh_token,omitempty" example:"your-uuid-refresh-token"` 
+	AccessToken  string            `json:"access_token" example:"eyJhbGciOiJIUzI1NiIs..."`
+	RefreshToken string            `json:"refresh_token,omitempty" example:"your-uuid-refresh-token"`
+	User         TokenUserResponse `json:"user" `
+}
+
+type TokenUserResponse struct {
+	UserId int64  `json:"user_id" example:"1"`
+	Email  string `json:"email" example:"example@gmail.com"`
+	Role   string `json:"role" example:"seller"`
 }
 
 type UserIDResponse struct {

@@ -194,6 +194,20 @@ definitions:
       refresh_token:
         example: your-uuid-refresh-token
         type: string
+      user:
+        $ref: '#/definitions/dto.TokenUserResponse'
+    type: object
+  dto.TokenUserResponse:
+    properties:
+      email:
+        example: example@gmail.com
+        type: string
+      role:
+        example: seller
+        type: string
+      user_id:
+        example: 1
+        type: integer
     type: object
   dto.UpdateProfileReq:
     properties:
@@ -282,6 +296,38 @@ paths:
       summary: Google OAuth Login
       tags:
       - Auth
+  /api/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Validates credentials and sends a 6-digit OTP to the user's email.
+      parameters:
+      - description: User credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LoginOTPResponse'
+        "400":
+          description: Invalid JSON format
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Invalid credentials
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 'Step 1: Login user'
+      tags:
+      - Auth
   /api/auth/logout:
     post:
       consumes:
@@ -324,6 +370,36 @@ paths:
           schema:
             $ref: '#/definitions/dto.TokenResponse'
       summary: Refresh Access Token
+      tags:
+      - Auth
+  /api/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Registers a new buyer or seller account
+      parameters:
+      - description: User credentials and profile details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.UserIDResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Register a new user
       tags:
       - Auth
   /api/auth/resend-otp:
@@ -463,38 +539,6 @@ paths:
       summary: Add Physical Stock
       tags:
       - Inventory
-  /api/login:
-    post:
-      consumes:
-      - application/json
-      description: Validates credentials and sends a 6-digit OTP to the user's email.
-      parameters:
-      - description: User credentials
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.LoginReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.LoginOTPResponse'
-        "400":
-          description: Invalid JSON format
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Invalid credentials
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 'Step 1: Login user'
-      tags:
-      - Auth
   /api/orders/{id}:
     get:
       description: Check if an order is PENDING, COMPLETED, or CANCELLED
@@ -692,36 +736,6 @@ paths:
       summary: Update a product
       tags:
       - Products
-  /api/register:
-    post:
-      consumes:
-      - application/json
-      description: Registers a new buyer or seller account
-      parameters:
-      - description: User credentials and profile details
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.RegisterReq'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/dto.UserIDResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      summary: Register a new user
-      tags:
-      - Users
   /api/search:
     get:
       description: Query the Elasticsearch cluster for products matching the search

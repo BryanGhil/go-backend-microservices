@@ -50,37 +50,46 @@ func (h *UserGrpcHandler) Login(ctx context.Context, req *pb.LoginRequest) (*pb.
 
 // NEW: Verifies OTP and returns the actual tokens
 func (h *UserGrpcHandler) VerifyOTP(ctx context.Context, req *pb.VerifyOTPRequest) (*pb.TokenResponse, error) {
-	access, refresh, err := h.usecase.VerifyOTP(ctx, req.GetEmail(), req.GetOtp(), req.GetUserAgent(), req.GetClientIp())
+	token, err := h.usecase.VerifyOTP(ctx, req.GetEmail(), req.GetOtp(), req.GetUserAgent(), req.GetClientIp())
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, "invalid or expired OTP")
 	}
 	return &pb.TokenResponse{
-		AccessToken:  access,
-		RefreshToken: refresh,
+		AccessToken:  token.AccessToken,
+		RefreshToken: token.RefreshToken,
+		UserId: token.UserId,
+		Email: token.Email,
+		Role: token.Role,
 	}, nil
 }
 
 // UPDATED: Now passes UserAgent and ClientIP to Usecase
 func (h *UserGrpcHandler) GoogleLogin(ctx context.Context, req *pb.GoogleLoginRequest) (*pb.TokenResponse, error) {
-	access, refresh, err := h.usecase.GoogleLogin(ctx, req.GetIdToken(), req.GetUserAgent(), req.GetClientIp())
+	token, err := h.usecase.GoogleLogin(ctx, req.GetIdToken(), req.GetUserAgent(), req.GetClientIp())
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 	return &pb.TokenResponse{
-		AccessToken:  access,
-		RefreshToken: refresh,
+		AccessToken:  token.AccessToken,
+		RefreshToken: token.RefreshToken,
+		UserId: token.UserId,
+		Email: token.Email,
+		Role: token.Role,
 	}, nil
 }
 
 // UPDATED: Now passes UserAgent and ClientIP to Usecase
 func (h *UserGrpcHandler) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.TokenResponse, error) {
-	access, refresh, err := h.usecase.RefreshToken(ctx, req.GetRefreshToken(), req.GetUserAgent(), req.GetClientIp())
+	token, err := h.usecase.RefreshToken(ctx, req.GetRefreshToken(), req.GetUserAgent(), req.GetClientIp())
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, "invalid refresh token")
 	}
 	return &pb.TokenResponse{
-		AccessToken:  access,
-		RefreshToken: refresh,
+		AccessToken:  token.AccessToken,
+		RefreshToken: token.RefreshToken,
+		UserId: token.UserId,
+		Email: token.Email,
+		Role: token.Role,
 	}, nil
 }
 

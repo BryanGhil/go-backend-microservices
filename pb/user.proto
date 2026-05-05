@@ -65,6 +65,9 @@ message RefreshTokenRequest {
 message TokenResponse {
     string access_token = 1;
     string refresh_token = 2;
+    int64 user_id = 3;
+    string email = 4;
+    string role = 5;
 }
 
 message UpdateProfileRequest {

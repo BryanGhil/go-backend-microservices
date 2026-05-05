@@ -52,7 +52,7 @@ func generateRandomOTP() string {
 	return fmt.Sprintf("%06d", rand.Intn(1000000))
 }
 
-func (u *userUseCase) generateTokenPair(ctx context.Context, user *domain.User, userAgent string, clientIP string) (string, string, error) {
+func (u *userUseCase) generateTokenPair(ctx context.Context, user *domain.User, userAgent string, clientIP string) (domain.TokenRes, error) {
 	tracer := otel.Tracer("user-usecase")
 	ctx, span := tracer.Start(ctx, "UseCase.generateTokenPair")
 	defer span.End()
@@ -82,10 +82,17 @@ func (u *userUseCase) generateTokenPair(ctx context.Context, user *domain.User, 
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "failed to store refresh session")
-		return "", "", errors.New("failed to store refresh session")
+		return domain.TokenRes{}, errors.New("failed to store refresh session")
 	}
 
-	return accessToken, refreshToken, nil
+	tokenRes := domain.TokenRes{
+		AccessToken: accessToken,
+		RefreshToken: refreshToken,
+		UserId: user.ID,
+		Email: user.Email,
+		Role: user.Role,
+	}
+	return tokenRes, nil
 }
 
 func (u *userUseCase) Register(ctx context.Context, req *domain.User, password string) (int64, error) {
@@ -155,17 +162,17 @@ func (u *userUseCase) Login(ctx context.Context, email, password string) (bool, 
 
 	fmt.Println("OTP = " + otp)
 
-	go func() {
-		err := u.emailSender.SendOTP(email, otp)
-		if err != nil {
-			fmt.Printf("[ERROR] Failed to send OTP to %s: %v\n", email, err)
-		}
-	}()
+	// go func() {
+	// 	err := u.emailSender.SendOTP(email, otp)
+	// 	if err != nil {
+	// 		fmt.Printf("[ERROR] Failed to send OTP to %s: %v\n", email, err)
+	// 	}
+	// }()
 
 	return true, nil
 }
 
-func (u *userUseCase) VerifyOTP(ctx context.Context, email, otp, userAgent, clientIP string) (string, string, error) {
+func (u *userUseCase) VerifyOTP(ctx context.Context, email, otp, userAgent, clientIP string) (domain.TokenRes, error) {
 	tracer := otel.Tracer("user-usecase")
 	ctx, span := tracer.Start(ctx, "UseCase.VerifyOTP")
 	defer span.End()
@@ -175,14 +182,14 @@ func (u *userUseCase) VerifyOTP(ctx context.Context, email, otp, userAgent, clie
 		err := errors.New("invalid or expired OTP")
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return "", "", err
+		return domain.TokenRes{}, err
 	}
 
 	user, err := u.pgRepo.GetUserByEmail(ctx, email)
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "user not found after OTP verification")
-		return "", "", errors.New("user not found")
+		return domain.TokenRes{}, errors.New("user not found")
 	}
 
 	u.redisRepo.DeleteOTP(ctx, email)
@@ -190,7 +197,7 @@ func (u *userUseCase) VerifyOTP(ctx context.Context, email, otp, userAgent, clie
 	return u.generateTokenPair(ctx, user, userAgent, clientIP)
 }
 
-func (u *userUseCase) GoogleLogin(ctx context.Context, googleIDToken string, userAgent string, clientIP string) (string, string, error) {
+func (u *userUseCase) GoogleLogin(ctx context.Context, googleIDToken string, userAgent string, clientIP string) (domain.TokenRes, error) {
 	tracer := otel.Tracer("user-usecase")
 	ctx, span := tracer.Start(ctx, "UseCase.GoogleLogin")
 	defer span.End()
@@ -200,7 +207,7 @@ func (u *userUseCase) GoogleLogin(ctx context.Context, googleIDToken string, use
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "invalid google token")
-		return "", "", errors.New("invalid google token")
+		return domain.TokenRes{}, errors.New("invalid google token")
 	}
 
 	email := payload.Claims["email"].(string)
@@ -224,7 +231,7 @@ func (u *userUseCase) GoogleLogin(ctx context.Context, googleIDToken string, use
 		if err != nil {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, "failed to auto-register google user")
-			return "", "", errors.New("failed to create google user")
+			return domain.TokenRes{}, errors.New("failed to create google user")
 		}
 		newUser.ID = id
 		user = newUser
@@ -234,7 +241,7 @@ func (u *userUseCase) GoogleLogin(ctx context.Context, googleIDToken string, use
 	return u.generateTokenPair(ctx, user, userAgent, clientIP)
 }
 
-func (u *userUseCase) RefreshToken(ctx context.Context, refreshToken string, userAgent string, clientIP string) (string, string, error) {
+func (u *userUseCase) RefreshToken(ctx context.Context, refreshToken string, userAgent string, clientIP string) (domain.TokenRes, error) {
 	tracer := otel.Tracer("user-usecase")
 	ctx, span := tracer.Start(ctx, "UseCase.RefreshToken")
 	defer span.End()
@@ -244,13 +251,15 @@ func (u *userUseCase) RefreshToken(ctx context.Context, refreshToken string, use
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "invalid or expired refresh token")
-		return "", "", errors.New("invalid or expired refresh token")
+		return domain.TokenRes{}, errors.New("invalid or expired refresh token")
 	}
 
 	// 2. Create a dummy user object to pass to token generator
-	user := &domain.User{
-		ID:   session.UserID,
-		Role: session.Role,
+	user, err := u.pgRepo.GetUserById(ctx, session.UserID)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "user not found in token")
+		return domain.TokenRes{}, errors.New("user not found")
 	}
 
 	// 3. Delete old refresh token (Token Rotation for security)

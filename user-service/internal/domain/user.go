@@ -43,11 +43,20 @@ type SessionData struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type TokenRes struct {
+	AccessToken  string
+	RefreshToken string
+	UserId       int64
+	Email        string
+	Role         string
+}
+
 // 1. Postgres handles permanent data
 type UserRepository interface {
 	// The repo will need to insert into BOTH tables using a DB Transaction
 	CreateUser(ctx context.Context, user *User) (int64, error)
 	GetUserByEmail(ctx context.Context, email string) (*User, error)
+	GetUserById(ctx context.Context, id int64) (*User, error)
 	UpdateProfile(ctx context.Context, user *User) error
 }
 
@@ -71,11 +80,11 @@ type UserUseCase interface {
 	Register(ctx context.Context, req *User, password string) (int64, error)
 
 	Login(ctx context.Context, email, password string) (bool, error)
-	GoogleLogin(ctx context.Context, googleIDToken, userAgent, clientIP string) (string, string, error)
-	RefreshToken(ctx context.Context, refreshToken, userAgent, clientIP string) (string, string, error)
+	GoogleLogin(ctx context.Context, googleIDToken, userAgent, clientIP string) (TokenRes, error)
+	RefreshToken(ctx context.Context, refreshToken, userAgent, clientIP string) (TokenRes, error)
 
 	// NEW: Verify OTP actually returns the tokens
-	VerifyOTP(ctx context.Context, email, otp, userAgent, clientIP string) (string, string, error)
+	VerifyOTP(ctx context.Context, email, otp, userAgent, clientIP string) (TokenRes, error)
 
 	GetUserSessions(ctx context.Context, userID int64) ([]*SessionData, error)
 
