@@ -54,6 +54,8 @@ func main() {
 	
 	r := gin.Default()
 
+	r.Use(middleware.CORSMiddleware())
+
 	r.Use(middleware.MetricsMiddleware())
 
 	r.Use(otelgin.Middleware("api-gateway"))
