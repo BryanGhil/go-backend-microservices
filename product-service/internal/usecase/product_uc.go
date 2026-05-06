@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"ecommerce/pb"
 	"ecommerce/product-service/internal/domain"
 	"fmt"
 )
@@ -9,10 +10,11 @@ import (
 type productUseCase struct {
 	repo      domain.ProductRepository
 	publisher domain.ProductEventPublisher
+	userGrpcClient pb.UserServiceClient
 }
 
-func NewProductUseCase(repo domain.ProductRepository, pub domain.ProductEventPublisher) domain.ProductUseCase {
-	return &productUseCase{repo: repo, publisher: pub}
+func NewProductUseCase(repo domain.ProductRepository, pub domain.ProductEventPublisher, userGrpcClient pb.UserServiceClient) domain.ProductUseCase {
+	return &productUseCase{repo: repo, publisher: pub, userGrpcClient: userGrpcClient}
 }
 
 func (u *productUseCase) GetProduct(ctx context.Context, id int64) (*domain.Product, error) {
@@ -27,6 +29,14 @@ func (u *productUseCase) CreateProduct(ctx context.Context, p *domain.Product) (
 	if p.SellerID == 0 {
 		return 0, fmt.Errorf("seller ID is required")
 	}
+	userRes, err := u.userGrpcClient.GetSellerProfile(ctx, &pb.GetSellerProfileReq{
+		SellerId: p.SellerID,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("failed to validate seller or fetch shop name")
+	}
+
+	p.SellerShopName = userRes.ShopName
 
 	id, err := u.repo.Create(ctx, p)
 	if err != nil {

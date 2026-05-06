@@ -82,22 +82,34 @@ func (r *userRepo) GetUserByEmail(ctx context.Context, email string) (*domain.Us
 	return &u, err
 }
 
+// CORRECTED REPOSITORY
 func (r *userRepo) GetUserById(ctx context.Context, id int64) (*domain.User, error) {
-	tracer := otel.Tracer("user-repository")
-	ctx, span := tracer.Start(ctx, "Postgres.GetUserById")
-	defer span.End()
+    tracer := otel.Tracer("user-repository")
+    ctx, span := tracer.Start(ctx, "Postgres.GetUserById")
+    defer span.End()
 
-	var u domain.User
-	query := `SELECT id, email, password_hash, role, is_active FROM users WHERE id = $1`
-	err := r.DB.QueryRowContext(ctx, query, id).Scan(
-		&u.ID, &u.Email, &u.PasswordHash, &u.Role, &u.IsActive,
-	)
+    var u domain.User
+    var shopName sql.NullString // Safely handles null values for buyers
 
-	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, "failed to fetch user by id")
-	}
-	return &u, err
+    // FIX: Added shop_name to the SELECT query
+    query := `SELECT u.id, u.email, u.password_hash, u.role, u.is_active, sp.shop_name FROM users u JOIN seller_profiles sp on u.id = sp.user_id WHERE u.id = $1`
+    
+    err := r.DB.QueryRowContext(ctx, query, id).Scan(
+        &u.ID, &u.Email, &u.PasswordHash, &u.Role, &u.IsActive, &shopName,
+    )
+
+    if err != nil {
+        span.RecordError(err)
+        return nil, err
+    }
+
+    if u.Role == "seller" && shopName.Valid {
+        u.SellerProfile = &domain.SellerProfile{
+            ShopName: shopName.String,
+        }
+    }
+
+    return &u, nil
 }
 
 func (r *userRepo) UpdateProfile(ctx context.Context, u *domain.User) error {

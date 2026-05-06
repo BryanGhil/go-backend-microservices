@@ -95,4 +95,10 @@ type UserUseCase interface {
 
 	ResendOTP(ctx context.Context, email string) error
 	Logout(ctx context.Context, refreshToken string) error
+
+	GetUserById(ctx context.Context, id int64) (*User, error)
+}
+
+type UserEventPublisher interface {
+	PublishShopNameUpdated(ctx context.Context, sellerID int64, shopName string) error
 }

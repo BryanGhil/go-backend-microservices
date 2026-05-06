@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"ecommerce/user-service/internal/domain"
-	"ecommerce/user-service/pkg/sender"
+	email "ecommerce/user-service/pkg/sender"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -36,15 +36,17 @@ type userUseCase struct {
 	jwtSecret      []byte
 	googleClientID string
 	emailSender    email.Sender // <--- ADD THIS
+	userPublisher  domain.UserEventPublisher
 }
 
-func NewUserUseCase(pg domain.UserRepository, redis domain.SessionRepository, jwtSecret string, googleClientID string, sender email.Sender) domain.UserUseCase {
+func NewUserUseCase(pg domain.UserRepository, redis domain.SessionRepository, jwtSecret string, googleClientID string, sender email.Sender, userPublisher domain.UserEventPublisher) domain.UserUseCase {
 	return &userUseCase{
 		pgRepo:         pg,
 		redisRepo:      redis,
 		jwtSecret:      []byte(jwtSecret),
 		googleClientID: googleClientID,
 		emailSender:    sender, // <--- ADD THIS
+		userPublisher:  userPublisher,
 	}
 }
 
@@ -65,7 +67,7 @@ func (u *userUseCase) generateTokenPair(ctx context.Context, user *domain.User, 
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
-	accessToken, _ := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims).SignedString(jwtSecretKey)
+	accessToken, _ := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims).SignedString(u.jwtSecret)
 
 	refreshToken := uuid.New().String()
 
@@ -77,7 +79,7 @@ func (u *userUseCase) generateTokenPair(ctx context.Context, user *domain.User, 
 		ClientIP:  clientIP,
 		CreatedAt: time.Now(),
 	}
-	
+
 	err := u.redisRepo.StoreRefreshToken(ctx, refreshToken, sessionData)
 	if err != nil {
 		span.RecordError(err)
@@ -86,11 +88,11 @@ func (u *userUseCase) generateTokenPair(ctx context.Context, user *domain.User, 
 	}
 
 	tokenRes := domain.TokenRes{
-		AccessToken: accessToken,
+		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-		UserId: user.ID,
-		Email: user.Email,
-		Role: user.Role,
+		UserId:       user.ID,
+		Email:        user.Email,
+		Role:         user.Role,
 	}
 	return tokenRes, nil
 }
@@ -226,7 +228,7 @@ func (u *userUseCase) GoogleLogin(ctx context.Context, googleIDToken string, use
 			ProviderID:   payload.Subject,
 			PasswordHash: "", // No password for Google users
 		}
-		
+
 		id, err := u.pgRepo.CreateUser(ctx, newUser)
 		if err != nil {
 			span.RecordError(err)
@@ -277,7 +279,17 @@ func (u *userUseCase) UpdateProfile(ctx context.Context, req *domain.User) error
 	err := u.pgRepo.UpdateProfile(ctx, req)
 	if err != nil {
 		span.RecordError(err)
+		return err
 	}
+
+	if req.SellerProfile != nil && req.SellerProfile.ShopName != "" {
+		err = u.userPublisher.PublishShopNameUpdated(ctx, req.ID, req.SellerProfile.ShopName)
+		if err != nil {
+			span.RecordError(err)
+			return err
+		}
+	}
+
 	return err
 }
 
@@ -358,12 +370,26 @@ func (u *userUseCase) Logout(ctx context.Context, refreshToken string) error {
 	ctx, span := tracer.Start(ctx, "UseCase.Logout")
 	defer span.End()
 
-	// Delete the token from Redis. If it's already gone, we don't care, 
+	// Delete the token from Redis. If it's already gone, we don't care,
 	// the user is effectively logged out anyway!
 	err := u.redisRepo.DeleteRefreshToken(ctx, refreshToken)
 	if err != nil {
 		span.RecordError(err)
 	}
-	
+
 	return nil
+}
+
+func (u *userUseCase) GetUserById(ctx context.Context, id int64) (*domain.User, error) {
+	tracer := otel.Tracer("user-usecase")
+	ctx, span := tracer.Start(ctx, "UseCase.GetUserbyId")
+	defer span.End()
+
+	user, err := u.pgRepo.GetUserById(ctx, id)
+	if err != nil {
+		span.RecordError(err)
+		return nil, err
+	}
+
+	return user, nil
 }

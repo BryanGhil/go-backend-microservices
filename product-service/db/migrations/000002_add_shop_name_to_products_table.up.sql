@@ -1,0 +1,2 @@
+ALTER TABLE products 
+ADD COLUMN seller_shop_name VARCHAR(255) DEFAULT '' NOT NULL;

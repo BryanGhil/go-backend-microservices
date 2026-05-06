@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"time"
 
 	"ecommerce/pb"
 	"ecommerce/user-service/internal/delivery"
@@ -17,6 +18,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/segmentio/kafka-go"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 
@@ -81,14 +83,25 @@ func main() {
 	})
 	defer redisClient.Close()
 
+	kafkaWriter := &kafka.Writer{
+		Addr:     kafka.TCP("localhost:9092"),
+		Topic:    "user-events",
+		Balancer: &kafka.LeastBytes{},
+		Async:        true,                  // Don't block the HTTP request!
+		BatchTimeout: 10 * time.Millisecond, // Only wait 10ms before sending
+	}
+	defer kafkaWriter.Close()
+
 	// --- 3. WIRE UP CLEAN ARCHITECTURE ---
 
 	// A. Initialize Repositories (One for Postgres, One for Redis)
 	userRepo := repository.NewPostgresUserRepo(pgDB)           // Ensure you have this struct built in your repo folder!
 	sessionRepo := repository.NewRedisSessionRepo(redisClient) // Ensure you have this struct built in your repo folder!
 
+	userPublisher := repository.NewKafkaPublisher(kafkaWriter)
+
 	// B. Initialize UseCase (Pass BOTH repos into the constructor)
-	userUC := usecase.NewUserUseCase(userRepo, sessionRepo, jwtSecret, googleClientID, emailSender)
+	userUC := usecase.NewUserUseCase(userRepo, sessionRepo, jwtSecret, googleClientID, emailSender, userPublisher)
 
 	// C. Initialize Delivery Handler (Pass the UseCase into the gRPC handler)
 	grpcHandler := delivery.NewUserGrpcHandler(userUC)

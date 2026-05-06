@@ -38,13 +38,13 @@ func (r *postgresProductRepo) GetByID(ctx context.Context, id int64) (*domain.Pr
 
 func (r *postgresProductRepo) Create(ctx context.Context, p *domain.Product) (int64, error) {
 	query := `
-		INSERT INTO products (seller_id, name, description, category, price, image_url, is_active) 
-		VALUES ($1, $2, $3, $4, $5, $6, true) 
+		INSERT INTO products (seller_id, name, description, category, price, image_url, is_active, seller_shop_name) 
+		VALUES ($1, $2, $3, $4, $5, $6, true, $7) 
 		RETURNING id`
 
 	var id int64
 	err := r.DB.QueryRowContext(ctx, query, 
-		p.SellerID, p.Name, p.Description, p.Category, p.Price, p.ImageURL,
+		p.SellerID, p.Name, p.Description, p.Category, p.Price, p.ImageURL, p.SellerShopName,
 	).Scan(&id)
 	
 	if err != nil {
@@ -140,4 +140,27 @@ func (r *postgresProductRepo) ListProducts(ctx context.Context, limit, offset in
 	}
 
 	return products, totalCount, nil
+}
+
+func (r *postgresProductRepo) UpdateSellerShopName(ctx context.Context, sellerID int64, shopName string) error {
+    query := `
+        UPDATE products 
+        SET seller_shop_name = $1, updated_at = CURRENT_TIMESTAMP
+        WHERE seller_id = $2`
+
+    result, err := r.DB.ExecContext(ctx, query, shopName, sellerID)
+    if err != nil {
+        return err
+    }
+
+    rowsAffected, err := result.RowsAffected()
+    if err != nil {
+        return err
+    }
+    
+    if rowsAffected == 0 {
+        return sql.ErrNoRows 
+    }
+
+    return nil
 }

@@ -20,6 +20,8 @@ service UserService {
 
   rpc ResendOTP (ResendOTPRequest) returns (SuccessResponse);
   rpc Logout (LogoutRequest) returns (SuccessResponse);
+  
+  rpc GetSellerProfile (GetSellerProfileReq) returns (GetSellerProfileRes);
 }
 
 message RegisterRequest { 
@@ -119,4 +121,12 @@ message ResendOTPRequest {
 
 message LogoutRequest {
   string refresh_token = 1;
+}
+
+message GetSellerProfileReq {
+  int64 seller_id = 1;
+}
+
+message GetSellerProfileRes {
+  string shop_name = 1;
 }

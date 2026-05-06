@@ -1,0 +1,1 @@
+migrate create -ext sql -dir db/migrations -seq <name_of_migration>

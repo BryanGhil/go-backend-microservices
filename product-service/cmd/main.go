@@ -12,16 +12,29 @@ import (
 	"ecommerce/product-service/internal/repository"
 	"ecommerce/product-service/internal/usecase"
 	"ecommerce/product-service/pkg/tracing"
+	"ecommerce/product-service/worker"
 
 	_ "github.com/lib/pq"
 	"github.com/segmentio/kafka-go"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+
 )
+
+func dial(addr string) *grpc.ClientConn {
+	conn, err := grpc.Dial(addr, 
+					grpc.WithTransportCredentials(insecure.NewCredentials()), 
+					grpc.WithStatsHandler(otelgrpc.NewClientHandler()),)
+	if err != nil {
+		log.Fatalf("could not connect to %s: %v", addr, err)
+	}
+	return conn
+}
 
 func runDBMigrations(db *sql.DB) {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
@@ -73,11 +86,25 @@ func main() {
 	}
 	defer kafkaWriter.Close()
 
+	kafkaReader := kafka.NewReader(kafka.ReaderConfig{
+		Brokers:   []string{"localhost:9092"},
+		Topic:     "user-events",           // Listening to the User Service!
+		GroupID:   "product-service-group", // Tracks which messages this service has read
+		MinBytes:  10e3, // 10KB
+		MaxBytes:  10e6, // 10MB
+	})
+	defer kafkaReader.Close()
+
+	connUser := dial("localhost:9002")
+
 	// 2. Wire up Clean Architecture (Remains the same!)
 	repo := repository.NewPostgresProductRepo(db)
 	publisher := repository.NewKafkaPublisher(kafkaWriter)
-	uc := usecase.NewProductUseCase(repo, publisher)
+	uc := usecase.NewProductUseCase(repo, publisher, pb.NewUserServiceClient(connUser))
 	handler := delivery.NewProductGrpcHandler(uc)
+
+	userEventConsumer := worker.NewUserEventConsumer(kafkaReader, repo)
+	go userEventConsumer.Start(context.Background())
 
 	// 3. Start gRPC Server
 	lis, err := net.Listen("tcp", ":9001")

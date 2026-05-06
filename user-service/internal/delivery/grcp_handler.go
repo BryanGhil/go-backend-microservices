@@ -168,3 +168,16 @@ func (h *UserGrpcHandler) Logout(ctx context.Context, req *pb.LogoutRequest) (*p
 	}
 	return &pb.SuccessResponse{Success: true}, nil
 }
+
+func (h *UserGrpcHandler) GetSellerProfile(ctx context.Context, req *pb.GetSellerProfileReq) (*pb.GetSellerProfileRes, error) {
+	// Assuming you have a function like GetUserByID in your UseCase
+	user, err := h.usecase.GetUserById(ctx, req.GetSellerId())
+	
+	if err != nil || user.Role != "seller" || user.SellerProfile == nil {
+		return nil, status.Error(codes.NotFound, "Seller not found or user is not a seller")
+	}
+
+	return &pb.GetSellerProfileRes{
+		ShopName: user.SellerProfile.ShopName,
+	}, nil
+}
