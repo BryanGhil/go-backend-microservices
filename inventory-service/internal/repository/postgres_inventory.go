@@ -11,29 +11,50 @@ type pgInventoryRepo struct{ DB *sql.DB }
 
 func NewPostgresInventoryRepo(db *sql.DB) domain.InventoryRepository { return &pgInventoryRepo{DB: db} }
 
-// Called when a new product is created
+// 1. Initialize (Called when Product is created)
 func (r *pgInventoryRepo) InitializeStock(ctx context.Context, productID int64) error {
-	// FIX: Table is 'inventories', column is 'stock_quantity'
-	_, err := r.DB.ExecContext(ctx, "INSERT INTO inventories (product_id, stock_quantity) VALUES ($1, 0)", productID)
+	_, err := r.DB.ExecContext(ctx, "INSERT INTO inventories (product_id, stock_quantity, reserved_quantity) VALUES ($1, 0, 0)", productID)
 	return err
 }
 
-// Called by Seller manually
-func (r *pgInventoryRepo) AddStock(ctx context.Context, productID int64, quantity int32) error {
-	_, err := r.DB.ExecContext(ctx, "UPDATE inventories SET stock_quantity = stock_quantity + $1 WHERE product_id = $2", quantity, productID)
-	return err
+// 2. Adjust Stock (Called by Seller manually - Handles positive AND negative numbers)
+func (r *pgInventoryRepo) AdjustStock(ctx context.Context, productID int64, delta int32) error {
+	// The MAGIC RULE: (stock_quantity + delta) MUST be >= reserved_quantity
+	query := `
+		UPDATE inventories 
+		SET stock_quantity = stock_quantity + $1 
+		WHERE product_id = $2 
+		AND (stock_quantity + $1) >= reserved_quantity
+	`
+	res, err := r.DB.ExecContext(ctx, query, delta, productID)
+	if err != nil {
+		return err
+	}
+	
+	rows, _ := res.RowsAffected()
+	if rows == 0 {
+		return errors.New("cannot decrease stock below currently reserved amount")
+	}
+	return nil
 }
 
-func (r *pgInventoryRepo) GetStock(ctx context.Context, productID int64) (int32, error) {
-	var stock int32
-	err := r.DB.QueryRowContext(ctx, "SELECT stock_quantity FROM inventories WHERE product_id = $1", productID).Scan(&stock)
-	return stock, err
-}
+// ==========================================
+// THE SAGA PATTERN (3-Step Order Lifecycle)
+// ==========================================
 
-// THE SAGA DEDUCTION - Prevents double selling
+// STEP 1: Reserve (Order Created - Waiting for Payment)
 func (r *pgInventoryRepo) ReserveStock(ctx context.Context, productID int64, quantity int32) error {
-	res, err := r.DB.ExecContext(ctx, "UPDATE inventories SET stock_quantity = stock_quantity - $1 WHERE product_id = $2 AND stock_quantity >= $1", quantity, productID)
-	if err != nil { return err }
+	// Check if Available (stock - reserved) >= requested quantity
+	query := `
+		UPDATE inventories 
+		SET reserved_quantity = reserved_quantity + $1 
+		WHERE product_id = $2 
+		AND (stock_quantity - reserved_quantity) >= $1
+	`
+	res, err := r.DB.ExecContext(ctx, query, quantity, productID)
+	if err != nil { 
+		return err 
+	}
 	
 	rows, _ := res.RowsAffected()
 	if rows == 0 {
@@ -42,8 +63,39 @@ func (r *pgInventoryRepo) ReserveStock(ctx context.Context, productID int64, qua
 	return nil
 }
 
-// COMPENSATING TRANSACTION - Puts it back if payment fails
-func (r *pgInventoryRepo) Restock(ctx context.Context, productID int64, quantity int32) error {
-	_, err := r.DB.ExecContext(ctx, "UPDATE inventories SET stock_quantity = stock_quantity + $1 WHERE product_id = $2", quantity, productID)
+// STEP 2a: Confirm (Payment Success - Item is officially sold)
+func (r *pgInventoryRepo) ConfirmStock(ctx context.Context, productID int64, quantity int32) error {
+	// Deduct from BOTH columns, because the item has left the building
+	query := `
+		UPDATE inventories 
+		SET stock_quantity = stock_quantity - $1,
+		    reserved_quantity = reserved_quantity - $1 
+		WHERE product_id = $2 
+		AND reserved_quantity >= $1
+	`
+	_, err := r.DB.ExecContext(ctx, query, quantity, productID)
 	return err
+}
+
+// STEP 2b: Release (Payment Failed or Timeout - Unlock the items)
+func (r *pgInventoryRepo) ReleaseStock(ctx context.Context, productID int64, quantity int32) error {
+	// Only deduct from reserved, putting it back into the "Available" pool
+	query := `
+		UPDATE inventories 
+		SET reserved_quantity = reserved_quantity - $1 
+		WHERE product_id = $2 
+		AND reserved_quantity >= $1
+	`
+	_, err := r.DB.ExecContext(ctx, query, quantity, productID)
+	return err
+}
+
+// 4. Read Data
+func (r *pgInventoryRepo) GetStock(ctx context.Context, productID int64) (int32, int32, error) {
+	var totalStock, reserved int32
+	query := "SELECT stock_quantity, reserved_quantity FROM inventories WHERE product_id = $1"
+	err := r.DB.QueryRowContext(ctx, query, productID).Scan(&totalStock, &reserved)
+	
+	// Returns both total AND reserved, so your UseCase can calculate "Available"
+	return totalStock, reserved, err 
 }

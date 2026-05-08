@@ -35,10 +35,11 @@ type ProductEventEnvelope struct {
 
 type InventoryRepository interface {
 	InitializeStock(ctx context.Context, productID int64) error
-	AddStock(ctx context.Context, productID int64, quantity int32) error
-	GetStock(ctx context.Context, productID int64) (int32, error)
+	AdjustStock(ctx context.Context, productID int64, delta int32) error
+	GetStock(ctx context.Context, productID int64) (int32, int32, error)
 	ReserveStock(ctx context.Context, productID int64, quantity int32) error
-	Restock(ctx context.Context, productID int64, quantity int32) error // Compensating Transaction
+	ConfirmStock(ctx context.Context, productID int64, quantity int32) error
+	ReleaseStock(ctx context.Context, productID int64, quantity int32) error
 }
 
 type KafkaPublisher interface {
@@ -46,6 +47,6 @@ type KafkaPublisher interface {
 }
 
 type InventoryUseCase interface {
-	AddStock(ctx context.Context, productID int64, quantity int32) error
+	AdjustStock(ctx context.Context, productID int64, delta int32) error
 	GetStock(ctx context.Context, productID int64) (int32, error)
 }

@@ -22,7 +22,7 @@ func NewInventoryHandler(client pb.InventoryServiceClient) *InventoryHandler {
 func (h *InventoryHandler) RegisterRoutes(router *gin.RouterGroup) {
 	router.GET("/inventory/:id", h.GetStock)
 	// Note: You should likely place this under an Admin/Seller protected route group in main.go
-	router.POST("/inventory/add", h.AddStock) 
+	router.POST("/inventory/adjust", h.AdjustStock) 
 }
 
 // @Summary Get Product Stock
@@ -58,14 +58,14 @@ func (h *InventoryHandler) GetStock(c *gin.Context) {
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /api/inventory/add [post]
-func (h *InventoryHandler) AddStock(c *gin.Context) {
+func (h *InventoryHandler) AdjustStock(c *gin.Context) {
 	var req dto.AddStockReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid JSON format or missing fields")
 		return
 	}
 
-	_, err := h.client.AddStock(c.Request.Context(), &pb.AddStockRequest{
+	_, err := h.client.AdjustStock(c.Request.Context(), &pb.AdjustStockRequest{
 		ProductId: req.ProductID,
 		Quantity:  req.Quantity,
 	})

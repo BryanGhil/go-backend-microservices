@@ -109,7 +109,7 @@ func (x *GetStockResponse) GetStock() int32 {
 	return 0
 }
 
-type AddStockRequest struct {
+type AdjustStockRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ProductId     int64                  `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
 	Quantity      int32                  `protobuf:"varint,2,opt,name=quantity,proto3" json:"quantity,omitempty"`
@@ -117,20 +117,20 @@ type AddStockRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *AddStockRequest) Reset() {
-	*x = AddStockRequest{}
+func (x *AdjustStockRequest) Reset() {
+	*x = AdjustStockRequest{}
 	mi := &file_inventory_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *AddStockRequest) String() string {
+func (x *AdjustStockRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AddStockRequest) ProtoMessage() {}
+func (*AdjustStockRequest) ProtoMessage() {}
 
-func (x *AddStockRequest) ProtoReflect() protoreflect.Message {
+func (x *AdjustStockRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_inventory_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -142,46 +142,46 @@ func (x *AddStockRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AddStockRequest.ProtoReflect.Descriptor instead.
-func (*AddStockRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use AdjustStockRequest.ProtoReflect.Descriptor instead.
+func (*AdjustStockRequest) Descriptor() ([]byte, []int) {
 	return file_inventory_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *AddStockRequest) GetProductId() int64 {
+func (x *AdjustStockRequest) GetProductId() int64 {
 	if x != nil {
 		return x.ProductId
 	}
 	return 0
 }
 
-func (x *AddStockRequest) GetQuantity() int32 {
+func (x *AdjustStockRequest) GetQuantity() int32 {
 	if x != nil {
 		return x.Quantity
 	}
 	return 0
 }
 
-type AddStockResponse struct {
+type AdjustStockResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *AddStockResponse) Reset() {
-	*x = AddStockResponse{}
+func (x *AdjustStockResponse) Reset() {
+	*x = AdjustStockResponse{}
 	mi := &file_inventory_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *AddStockResponse) String() string {
+func (x *AdjustStockResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AddStockResponse) ProtoMessage() {}
+func (*AdjustStockResponse) ProtoMessage() {}
 
-func (x *AddStockResponse) ProtoReflect() protoreflect.Message {
+func (x *AdjustStockResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_inventory_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -193,12 +193,12 @@ func (x *AddStockResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AddStockResponse.ProtoReflect.Descriptor instead.
-func (*AddStockResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use AdjustStockResponse.ProtoReflect.Descriptor instead.
+func (*AdjustStockResponse) Descriptor() ([]byte, []int) {
 	return file_inventory_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *AddStockResponse) GetSuccess() bool {
+func (x *AdjustStockResponse) GetSuccess() bool {
 	if x != nil {
 		return x.Success
 	}
@@ -214,16 +214,16 @@ const file_inventory_proto_rawDesc = "" +
 	"\n" +
 	"product_id\x18\x01 \x01(\x03R\tproductId\"(\n" +
 	"\x10GetStockResponse\x12\x14\n" +
-	"\x05stock\x18\x01 \x01(\x05R\x05stock\"L\n" +
-	"\x0fAddStockRequest\x12\x1d\n" +
+	"\x05stock\x18\x01 \x01(\x05R\x05stock\"O\n" +
+	"\x12AdjustStockRequest\x12\x1d\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\x03R\tproductId\x12\x1a\n" +
-	"\bquantity\x18\x02 \x01(\x05R\bquantity\",\n" +
-	"\x10AddStockResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess2\x9c\x01\n" +
+	"\bquantity\x18\x02 \x01(\x05R\bquantity\"/\n" +
+	"\x13AdjustStockResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess2\xa5\x01\n" +
 	"\x10InventoryService\x12C\n" +
-	"\bGetStock\x12\x1a.inventory.GetStockRequest\x1a\x1b.inventory.GetStockResponse\x12C\n" +
-	"\bAddStock\x12\x1a.inventory.AddStockRequest\x1a\x1b.inventory.AddStockResponseB\x0eZ\fecommerce/pbb\x06proto3"
+	"\bGetStock\x12\x1a.inventory.GetStockRequest\x1a\x1b.inventory.GetStockResponse\x12L\n" +
+	"\vAdjustStock\x12\x1d.inventory.AdjustStockRequest\x1a\x1e.inventory.AdjustStockResponseB\x0eZ\fecommerce/pbb\x06proto3"
 
 var (
 	file_inventory_proto_rawDescOnce sync.Once
@@ -239,16 +239,16 @@ func file_inventory_proto_rawDescGZIP() []byte {
 
 var file_inventory_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_inventory_proto_goTypes = []any{
-	(*GetStockRequest)(nil),  // 0: inventory.GetStockRequest
-	(*GetStockResponse)(nil), // 1: inventory.GetStockResponse
-	(*AddStockRequest)(nil),  // 2: inventory.AddStockRequest
-	(*AddStockResponse)(nil), // 3: inventory.AddStockResponse
+	(*GetStockRequest)(nil),     // 0: inventory.GetStockRequest
+	(*GetStockResponse)(nil),    // 1: inventory.GetStockResponse
+	(*AdjustStockRequest)(nil),  // 2: inventory.AdjustStockRequest
+	(*AdjustStockResponse)(nil), // 3: inventory.AdjustStockResponse
 }
 var file_inventory_proto_depIdxs = []int32{
 	0, // 0: inventory.InventoryService.GetStock:input_type -> inventory.GetStockRequest
-	2, // 1: inventory.InventoryService.AddStock:input_type -> inventory.AddStockRequest
+	2, // 1: inventory.InventoryService.AdjustStock:input_type -> inventory.AdjustStockRequest
 	1, // 2: inventory.InventoryService.GetStock:output_type -> inventory.GetStockResponse
-	3, // 3: inventory.InventoryService.AddStock:output_type -> inventory.AddStockResponse
+	3, // 3: inventory.InventoryService.AdjustStock:output_type -> inventory.AdjustStockResponse
 	2, // [2:4] is the sub-list for method output_type
 	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name

@@ -34,11 +34,11 @@ func (h *InventoryGrpcHandler) GetStock(ctx context.Context, req *pb.GetStockReq
 }
 
 // Handles manual stock additions by an admin/seller
-func (h *InventoryGrpcHandler) AddStock(ctx context.Context, req *pb.AddStockRequest) (*pb.AddStockResponse, error) {
-	err := h.usecase.AddStock(ctx, req.GetProductId(), req.GetQuantity())
+func (h *InventoryGrpcHandler) AdjustStock(ctx context.Context, req *pb.AdjustStockRequest) (*pb.AdjustStockResponse, error) {
+	err := h.usecase.AdjustStock(ctx, req.GetProductId(), req.GetQuantity())
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to add stock")
 	}
 
-	return &pb.AddStockResponse{Success: true}, nil
+	return &pb.AdjustStockResponse{Success: true}, nil
 }
