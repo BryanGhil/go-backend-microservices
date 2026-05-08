@@ -19,8 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	InventoryService_GetStock_FullMethodName    = "/inventory.InventoryService/GetStock"
-	InventoryService_AdjustStock_FullMethodName = "/inventory.InventoryService/AdjustStock"
+	InventoryService_GetStock_FullMethodName       = "/inventory.InventoryService/GetStock"
+	InventoryService_AdjustStock_FullMethodName    = "/inventory.InventoryService/AdjustStock"
+	InventoryService_GetStocksBatch_FullMethodName = "/inventory.InventoryService/GetStocksBatch"
 )
 
 // InventoryServiceClient is the client API for InventoryService service.
@@ -29,6 +30,7 @@ const (
 type InventoryServiceClient interface {
 	GetStock(ctx context.Context, in *GetStockRequest, opts ...grpc.CallOption) (*GetStockResponse, error)
 	AdjustStock(ctx context.Context, in *AdjustStockRequest, opts ...grpc.CallOption) (*AdjustStockResponse, error)
+	GetStocksBatch(ctx context.Context, in *GetStocksBatchRequest, opts ...grpc.CallOption) (*GetStocksBatchResponse, error)
 }
 
 type inventoryServiceClient struct {
@@ -59,12 +61,23 @@ func (c *inventoryServiceClient) AdjustStock(ctx context.Context, in *AdjustStoc
 	return out, nil
 }
 
+func (c *inventoryServiceClient) GetStocksBatch(ctx context.Context, in *GetStocksBatchRequest, opts ...grpc.CallOption) (*GetStocksBatchResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetStocksBatchResponse)
+	err := c.cc.Invoke(ctx, InventoryService_GetStocksBatch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // InventoryServiceServer is the server API for InventoryService service.
 // All implementations must embed UnimplementedInventoryServiceServer
 // for forward compatibility.
 type InventoryServiceServer interface {
 	GetStock(context.Context, *GetStockRequest) (*GetStockResponse, error)
 	AdjustStock(context.Context, *AdjustStockRequest) (*AdjustStockResponse, error)
+	GetStocksBatch(context.Context, *GetStocksBatchRequest) (*GetStocksBatchResponse, error)
 	mustEmbedUnimplementedInventoryServiceServer()
 }
 
@@ -80,6 +93,9 @@ func (UnimplementedInventoryServiceServer) GetStock(context.Context, *GetStockRe
 }
 func (UnimplementedInventoryServiceServer) AdjustStock(context.Context, *AdjustStockRequest) (*AdjustStockResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AdjustStock not implemented")
+}
+func (UnimplementedInventoryServiceServer) GetStocksBatch(context.Context, *GetStocksBatchRequest) (*GetStocksBatchResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetStocksBatch not implemented")
 }
 func (UnimplementedInventoryServiceServer) mustEmbedUnimplementedInventoryServiceServer() {}
 func (UnimplementedInventoryServiceServer) testEmbeddedByValue()                          {}
@@ -138,6 +154,24 @@ func _InventoryService_AdjustStock_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _InventoryService_GetStocksBatch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStocksBatchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InventoryServiceServer).GetStocksBatch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InventoryService_GetStocksBatch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InventoryServiceServer).GetStocksBatch(ctx, req.(*GetStocksBatchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // InventoryService_ServiceDesc is the grpc.ServiceDesc for InventoryService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -152,6 +186,10 @@ var InventoryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AdjustStock",
 			Handler:    _InventoryService_AdjustStock_Handler,
+		},
+		{
+			MethodName: "GetStocksBatch",
+			Handler:    _InventoryService_GetStocksBatch_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

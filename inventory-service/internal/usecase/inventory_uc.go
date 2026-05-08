@@ -36,3 +36,7 @@ func (u *inventoryUC) GetStock(ctx context.Context, productID int64) (int32, err
 
 	return availableStock, nil
 }
+
+func (u *inventoryUC) GetStocksBatch(ctx context.Context, productIDs []int64) (map[int64]int32, error) {
+	return u.repo.GetStocksBatch(ctx, productIDs)
+}

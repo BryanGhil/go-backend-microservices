@@ -22,11 +22,12 @@ func NewProductHandler(client pb.ProductServiceClient) *ProductHandler {
 
 func (h *ProductHandler) RegisterRoutes(public *gin.RouterGroup, protected *gin.RouterGroup) {
 	// Assuming you have an AuthMiddleware that sets "user_id" and "role" in the context
-	protected.POST("/products", h.CreateProduct)
 	public.GET("/products", h.ListProducts)
 	public.GET("/products/:id", h.GetProduct)
-	protected.PUT("/products/:id", h.UpdateProduct)
-	protected.DELETE("/products/:id", h.DeleteProduct)
+	protected.POST("/seller/products", h.CreateProduct)
+	protected.PUT("/seller/products/:id", h.UpdateProduct)
+	protected.DELETE("/seller/products/:id", h.DeleteProduct)
+	protected.GET("/seller/products", h.GetSellerDashboardProducts)
 }
 
 // @Summary Create a new product
@@ -95,7 +96,7 @@ func (h *ProductHandler) ListProducts(c *gin.Context) {
 		Category: category,
 		SellerId: sellerID,
 	})
-	
+
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to fetch products")
 		return
@@ -131,7 +132,7 @@ func (h *ProductHandler) ListProducts(c *gin.Context) {
 func (h *ProductHandler) GetProduct(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	res, err := h.client.GetProduct(c.Request.Context(), &pb.GetProductRequest{Id: id})
-	
+
 	if err != nil {
 		st, ok := status.FromError(err)
 		if ok && st.Code() == codes.NotFound {
@@ -246,4 +247,53 @@ func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 		return
 	}
 	utils.SuccessResponse(c, http.StatusOK, "Product deleted successfully", gin.H{"id": id})
+}
+
+func (h *ProductHandler) GetSellerDashboardProducts(c *gin.Context) {
+	// 1. Extract Pagination from Query Params
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	offset := (page - 1) * limit // Convert page to SQL offset
+
+	// 2. Extract Filters
+	userID := c.GetInt64("userID")
+	role := c.GetString("role")
+
+	if role != "seller" {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Seller only")
+		return
+	}
+
+	res, err := h.client.GetSellerDashboardProducts(c.Request.Context(), &pb.GetSellerDashboardProductsRequest{
+		Limit:    int32(limit),
+		Offset:   int32(offset),
+		SellerId: userID,
+	})
+
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to fetch products")
+		return
+	}
+
+	// 3. Format Response nicely to hide ugly Protobuf generated fields
+	var products []map[string]interface{}
+	for _, p := range res.Products {
+		products = append(products, map[string]interface{}{
+			"id":          p.Id,
+			"seller_id":   p.SellerId,
+			"name":        p.Name,
+			"description": p.Description,
+			"category":    p.Category,
+			"price":       p.Price,
+			"image_url":   p.ImageUrl,
+			"stock":       p.Stock,
+		})
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "Products retrieved successfully", gin.H{
+		"products":    products,
+		"total_count": res.TotalCount,
+		"page":        page,
+		"limit":       limit,
+	})
 }

@@ -3,8 +3,10 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"ecommerce/inventory-service/internal/domain"
+	"errors"
+
+	"github.com/lib/pq"
 )
 
 type pgInventoryRepo struct{ DB *sql.DB }
@@ -98,4 +100,30 @@ func (r *pgInventoryRepo) GetStock(ctx context.Context, productID int64) (int32,
 	
 	// Returns both total AND reserved, so your UseCase can calculate "Available"
 	return totalStock, reserved, err 
+}
+
+func (r *pgInventoryRepo) GetStocksBatch(ctx context.Context, productIDs []int64) (map[int64]int32, error) {
+	query := `
+		SELECT product_id, stock_quantity, reserved_quantity 
+		FROM inventories 
+		WHERE product_id = ANY($1)
+	`
+	
+	rows, err := r.DB.QueryContext(ctx, query, pq.Array(productIDs))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// 2. Build the Map
+	stockMap := make(map[int64]int32)
+	for rows.Next() {
+		var pID int64
+		var total, reserved int32
+		if err := rows.Scan(&pID, &total, &reserved); err == nil {
+			stockMap[pID] = total - reserved // The exact Available stock!
+		}
+	}
+	
+	return stockMap, nil
 }

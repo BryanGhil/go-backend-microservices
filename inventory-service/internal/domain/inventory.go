@@ -40,6 +40,7 @@ type InventoryRepository interface {
 	ReserveStock(ctx context.Context, productID int64, quantity int32) error
 	ConfirmStock(ctx context.Context, productID int64, quantity int32) error
 	ReleaseStock(ctx context.Context, productID int64, quantity int32) error
+	GetStocksBatch(ctx context.Context, productIDs []int64) (map[int64]int32, error)
 }
 
 type KafkaPublisher interface {
@@ -49,4 +50,5 @@ type KafkaPublisher interface {
 type InventoryUseCase interface {
 	AdjustStock(ctx context.Context, productID int64, delta int32) error
 	GetStock(ctx context.Context, productID int64) (int32, error)
+	GetStocksBatch(ctx context.Context, productIDs []int64) (map[int64]int32, error)
 }

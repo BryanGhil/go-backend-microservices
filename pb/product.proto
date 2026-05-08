@@ -11,6 +11,7 @@ service ProductService {
   rpc UpdateProduct (UpdateProductRequest) returns (UpdateProductResponse);
   rpc DeleteProduct (DeleteProductRequest) returns (DeleteProductResponse);
   rpc ListProducts (ListProductsRequest) returns (ListProductsResponse);
+  rpc GetSellerDashboardProducts (GetSellerDashboardProductsRequest) returns (GetSellerDashboardProductsResponse);
 }
 
 // Optional: It is usually better to put this in a separate search.proto later, 
@@ -31,6 +32,7 @@ message Product {
   double price = 6;
   string image_url = 7;
   bool is_active = 8;
+  int32 stock = 9;
 }
 
 // --- Requests & Responses ---
@@ -101,6 +103,17 @@ message SearchRequest {
 }
 
 message SearchResponse {
+  repeated Product products = 1;
+  int64 total_count = 2;
+}
+
+message GetSellerDashboardProductsRequest {
+  int32 limit = 1;        
+  int32 offset = 2;       
+  int64 seller_id = 3;    
+}
+
+message GetSellerDashboardProductsResponse {
   repeated Product products = 1;
   int64 total_count = 2;
 }

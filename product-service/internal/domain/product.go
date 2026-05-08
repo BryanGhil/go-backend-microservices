@@ -12,6 +12,7 @@ type Product struct {
 	ImageURL       string
 	IsActive       bool
 	SellerShopName string
+	Stock          int32
 }
 
 // The interfaces dictate how the layers talk to each other
@@ -30,6 +31,7 @@ type ProductUseCase interface {
 	UpdateProduct(ctx context.Context, p *Product) error
 	DeleteProduct(ctx context.Context, id int64) error
 	ListProducts(ctx context.Context, limit, offset int32, sellerID int64, category string) ([]*Product, int64, error)
+	GetSellerDashboardProducts(ctx context.Context, limit, offset int32, sellerID int64) ([]*Product, int64, error)
 }
 
 // Add this below your existing interfaces

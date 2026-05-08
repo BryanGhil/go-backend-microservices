@@ -96,11 +96,12 @@ func main() {
 	defer kafkaReader.Close()
 
 	connUser := dial("localhost:9002")
+	connInventory := dial("localhost:9005")
 
 	// 2. Wire up Clean Architecture (Remains the same!)
 	repo := repository.NewPostgresProductRepo(db)
 	publisher := repository.NewKafkaPublisher(kafkaWriter)
-	uc := usecase.NewProductUseCase(repo, publisher, pb.NewUserServiceClient(connUser))
+	uc := usecase.NewProductUseCase(repo, publisher, pb.NewUserServiceClient(connUser), pb.NewInventoryServiceClient(connInventory))
 	handler := delivery.NewProductGrpcHandler(uc)
 
 	userEventConsumer := worker.NewUserEventConsumer(kafkaReader, repo)

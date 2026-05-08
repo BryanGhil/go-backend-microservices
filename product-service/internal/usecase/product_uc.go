@@ -11,10 +11,11 @@ type productUseCase struct {
 	repo      domain.ProductRepository
 	publisher domain.ProductEventPublisher
 	userGrpcClient pb.UserServiceClient
+	inventoryGrpcClient pb.InventoryServiceClient
 }
 
-func NewProductUseCase(repo domain.ProductRepository, pub domain.ProductEventPublisher, userGrpcClient pb.UserServiceClient) domain.ProductUseCase {
-	return &productUseCase{repo: repo, publisher: pub, userGrpcClient: userGrpcClient}
+func NewProductUseCase(repo domain.ProductRepository, pub domain.ProductEventPublisher, userGrpcClient pb.UserServiceClient, inventoryGrpcClient pb.InventoryServiceClient) domain.ProductUseCase {
+	return &productUseCase{repo: repo, publisher: pub, userGrpcClient: userGrpcClient, inventoryGrpcClient: inventoryGrpcClient}
 }
 
 func (u *productUseCase) GetProduct(ctx context.Context, id int64) (*domain.Product, error) {
@@ -73,4 +74,38 @@ func (u *productUseCase) ListProducts(ctx context.Context, limit, offset int32, 
 	}
 
 	return u.repo.ListProducts(ctx, limit, offset, sellerID, category)
+}
+
+func (u *productUseCase) GetSellerDashboardProducts(ctx context.Context, limit, offset int32, sellerID int64) ([]*domain.Product, int64, error) {
+	if limit <= 0 || limit > 100 {
+		limit = 10
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	products, count, err := u.repo.ListProducts(ctx, limit, offset, sellerID, "")
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var productIDS []int64
+	for _, p := range products {
+		productIDS = append(productIDS, p.ID)
+	}
+
+	productStock, err := u.inventoryGrpcClient.GetStocksBatch(ctx, &pb.GetStocksBatchRequest{ProductIds: productIDS})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	for _, p := range products {
+		if stock, exists := productStock.Stocks[p.ID]; exists {
+			p.Stock = stock
+		} else {
+			p.Stock = 0
+		}
+	}
+
+	return products, count, err
 }

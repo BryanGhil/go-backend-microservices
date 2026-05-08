@@ -42,3 +42,12 @@ func (h *InventoryGrpcHandler) AdjustStock(ctx context.Context, req *pb.AdjustSt
 
 	return &pb.AdjustStockResponse{Success: true}, nil
 }
+
+func (h *InventoryGrpcHandler) GetStocksBatch(ctx context.Context, req *pb.GetStocksBatchRequest) (*pb.GetStocksBatchResponse, error) {
+	stocks, err := h.usecase.GetStocksBatch(ctx, req.GetProductIds())
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to get stocks")
+	}
+
+	return &pb.GetStocksBatchResponse{Stocks: stocks} , err
+}
