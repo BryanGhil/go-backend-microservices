@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 )
 
@@ -163,4 +164,30 @@ func (r *postgresProductRepo) UpdateSellerShopName(ctx context.Context, sellerID
     }
 
     return nil
+}
+
+func (r *postgresProductRepo) GetProductsBatch(ctx context.Context, productIDs []int64) (map[int64]*domain.Product, error) {
+	query := `
+		SELECT id, seller_id, name, COALESCE(description, ''), COALESCE(category, ''), price, COALESCE(image_url, ''), seller_shop_name, seller_id
+		FROM products 
+		WHERE id = ANY($1) AND is_active = true
+	`
+	
+	rows, err := r.DB.QueryContext(ctx, query, pq.Array(productIDs))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// 2. Build the Map
+	productMap := make(map[int64]*domain.Product)
+	for rows.Next() {
+		var p domain.Product
+		if err := rows.Scan(&p.ID, &p.SellerID, &p.Name, &p.Description, &p.Category, &p.Price, &p.ImageURL, &p.SellerShopName, &p.SellerID); err != nil {
+			return nil, err
+		}
+		productMap[p.ID] = &p
+	}
+	
+	return productMap, nil
 }

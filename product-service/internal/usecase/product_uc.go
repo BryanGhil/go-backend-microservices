@@ -109,3 +109,7 @@ func (u *productUseCase) GetSellerDashboardProducts(ctx context.Context, limit, 
 
 	return products, count, err
 }
+
+func (u *productUseCase) GetProductsBatch(ctx context.Context, productIDs []int64) (map[int64]*domain.Product, error) {
+	return u.repo.GetProductsBatch(ctx, productIDs)
+}

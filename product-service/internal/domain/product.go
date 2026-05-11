@@ -23,6 +23,7 @@ type ProductRepository interface {
 	Delete(ctx context.Context, id int64) error
 	ListProducts(ctx context.Context, limit, offset int32, sellerID int64, category string) ([]*Product, int64, error)
 	UpdateSellerShopName(ctx context.Context, sellerID int64, shopName string) error
+	GetProductsBatch(ctx context.Context, productIDs []int64) (map[int64]*Product, error)
 }
 
 type ProductUseCase interface {
@@ -32,6 +33,7 @@ type ProductUseCase interface {
 	DeleteProduct(ctx context.Context, id int64) error
 	ListProducts(ctx context.Context, limit, offset int32, sellerID int64, category string) ([]*Product, int64, error)
 	GetSellerDashboardProducts(ctx context.Context, limit, offset int32, sellerID int64) ([]*Product, int64, error)
+	GetProductsBatch(ctx context.Context, productIDs []int64) (map[int64]*Product, error)
 }
 
 // Add this below your existing interfaces

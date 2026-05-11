@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package cart;
+option go_package = "ecommerce/pb"; 
+
+service CartService {
+    rpc GetCart (GetCartRequest) returns (GetCartResponse);
+    rpc AddToCart (AddToCartRequest) returns (AddToCartResponse);
+    rpc RemoveItem (RemoveItemRequest) returns (RemoveItemResponse);
+    rpc ClearCart (ClearCartRequest) returns (ClearCartResponse);
+    rpc GetCartCount (GetCartCountRequest) returns (GetCartCountResponse);
+}
+
+// --- GET CART ---
+message GetCartRequest {
+    int64 user_id = 1;
+}
+
+message CartItem {
+    int64 product_id = 1;
+    int32 quantity = 2;
+    string name = 3;
+    double price = 4;
+    double subtotal = 5;
+    string image_url = 6;
+    string seller_shop_name = 7;
+}
+
+message GetCartResponse {
+    repeated CartItem items = 1; 
+}
+
+message AddToCartRequest {
+    int64 user_id = 1;
+    int64 product_id = 2;
+    int32 quantity = 3; // Can be positive (add) or negative (subtract)
+}
+
+message AddToCartResponse {
+    bool success = 1;
+}
+
+message RemoveItemRequest {
+    int64 user_id = 1;
+    int64 product_id = 2;
+}
+
+message RemoveItemResponse {
+    bool success = 1;
+}
+
+message ClearCartRequest {
+    int64 user_id = 1;
+}
+
+message ClearCartResponse {
+    bool success = 1;
+}
+
+message GetCartCountRequest {
+    int64 user_id = 1;
+}
+
+message GetCartCountResponse {
+    int32 count = 1;
+}

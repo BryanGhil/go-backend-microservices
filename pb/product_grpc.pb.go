@@ -25,6 +25,7 @@ const (
 	ProductService_DeleteProduct_FullMethodName              = "/product.ProductService/DeleteProduct"
 	ProductService_ListProducts_FullMethodName               = "/product.ProductService/ListProducts"
 	ProductService_GetSellerDashboardProducts_FullMethodName = "/product.ProductService/GetSellerDashboardProducts"
+	ProductService_GetProductsBatch_FullMethodName           = "/product.ProductService/GetProductsBatch"
 )
 
 // ProductServiceClient is the client API for ProductService service.
@@ -37,6 +38,7 @@ type ProductServiceClient interface {
 	DeleteProduct(ctx context.Context, in *DeleteProductRequest, opts ...grpc.CallOption) (*DeleteProductResponse, error)
 	ListProducts(ctx context.Context, in *ListProductsRequest, opts ...grpc.CallOption) (*ListProductsResponse, error)
 	GetSellerDashboardProducts(ctx context.Context, in *GetSellerDashboardProductsRequest, opts ...grpc.CallOption) (*GetSellerDashboardProductsResponse, error)
+	GetProductsBatch(ctx context.Context, in *GetProductsBatchRequest, opts ...grpc.CallOption) (*GetProductsBatchResponse, error)
 }
 
 type productServiceClient struct {
@@ -107,6 +109,16 @@ func (c *productServiceClient) GetSellerDashboardProducts(ctx context.Context, i
 	return out, nil
 }
 
+func (c *productServiceClient) GetProductsBatch(ctx context.Context, in *GetProductsBatchRequest, opts ...grpc.CallOption) (*GetProductsBatchResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetProductsBatchResponse)
+	err := c.cc.Invoke(ctx, ProductService_GetProductsBatch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProductServiceServer is the server API for ProductService service.
 // All implementations must embed UnimplementedProductServiceServer
 // for forward compatibility.
@@ -117,6 +129,7 @@ type ProductServiceServer interface {
 	DeleteProduct(context.Context, *DeleteProductRequest) (*DeleteProductResponse, error)
 	ListProducts(context.Context, *ListProductsRequest) (*ListProductsResponse, error)
 	GetSellerDashboardProducts(context.Context, *GetSellerDashboardProductsRequest) (*GetSellerDashboardProductsResponse, error)
+	GetProductsBatch(context.Context, *GetProductsBatchRequest) (*GetProductsBatchResponse, error)
 	mustEmbedUnimplementedProductServiceServer()
 }
 
@@ -144,6 +157,9 @@ func (UnimplementedProductServiceServer) ListProducts(context.Context, *ListProd
 }
 func (UnimplementedProductServiceServer) GetSellerDashboardProducts(context.Context, *GetSellerDashboardProductsRequest) (*GetSellerDashboardProductsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetSellerDashboardProducts not implemented")
+}
+func (UnimplementedProductServiceServer) GetProductsBatch(context.Context, *GetProductsBatchRequest) (*GetProductsBatchResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetProductsBatch not implemented")
 }
 func (UnimplementedProductServiceServer) mustEmbedUnimplementedProductServiceServer() {}
 func (UnimplementedProductServiceServer) testEmbeddedByValue()                        {}
@@ -274,6 +290,24 @@ func _ProductService_GetSellerDashboardProducts_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProductService_GetProductsBatch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProductsBatchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProductServiceServer).GetProductsBatch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProductService_GetProductsBatch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProductServiceServer).GetProductsBatch(ctx, req.(*GetProductsBatchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ProductService_ServiceDesc is the grpc.ServiceDesc for ProductService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -304,6 +338,10 @@ var ProductService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSellerDashboardProducts",
 			Handler:    _ProductService_GetSellerDashboardProducts_Handler,
+		},
+		{
+			MethodName: "GetProductsBatch",
+			Handler:    _ProductService_GetProductsBatch_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

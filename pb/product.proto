@@ -12,6 +12,7 @@ service ProductService {
   rpc DeleteProduct (DeleteProductRequest) returns (DeleteProductResponse);
   rpc ListProducts (ListProductsRequest) returns (ListProductsResponse);
   rpc GetSellerDashboardProducts (GetSellerDashboardProductsRequest) returns (GetSellerDashboardProductsResponse);
+  rpc GetProductsBatch (GetProductsBatchRequest) returns (GetProductsBatchResponse);
 }
 
 // Optional: It is usually better to put this in a separate search.proto later, 
@@ -33,6 +34,7 @@ message Product {
   string image_url = 7;
   bool is_active = 8;
   int32 stock = 9;
+  string seller_shop_name = 10;
 }
 
 // --- Requests & Responses ---
@@ -93,6 +95,14 @@ message ListProductsRequest {
 message ListProductsResponse {
   repeated Product products = 1;
   int64 total_count = 2;  // Crucial for the frontend to know how many total pages exist
+}
+
+message GetProductsBatchRequest {
+  repeated int64 product_ids = 1;
+}
+
+message GetProductsBatchResponse {
+ map<int64, Product> products = 1;
 }
 
 // --- Search ---

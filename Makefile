@@ -15,6 +15,7 @@ build-services:
 	@go build -o bin/order-service ./order-service/cmd/main.go
 	@go build -o bin/inventory-service ./inventory-service/cmd/main.go
 	@go build -o bin/payment-service ./payment-service/cmd/main.go
+	@go build -o bin/cart-service ./cart-service/cmd/main.go
 	@echo "All services built successfully!"
 
 # Runs the compiled binaries in the background
@@ -28,6 +29,7 @@ run-services: build-services
 	@./bin/order-service > logs/order-service.log 2>&1 &
 	@./bin/inventory-service > logs/inventory-service.log 2>&1 &
 	@./bin/payment-service > logs/payment-service.log 2>&1 &
+	@./bin/cart-service > logs/cart-service.log 2>&1 &
 	@echo "All services running! Logs are being written to the /logs directory."
 	@wait
 

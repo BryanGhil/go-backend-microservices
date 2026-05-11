@@ -74,6 +74,7 @@ func main() {
 	connOrder := dial("localhost:9004")
 	connInventory := dial("localhost:9005")
 	connPayment := dial("localhost:9006")
+	connCart := dial("localhost:9007")
 
 	// 2. Initialize Handlers
 	userH := handler.NewUserHandler(pb.NewUserServiceClient(connUser))
@@ -82,6 +83,7 @@ func main() {
 	orderH := handler.NewOrderHandler(pb.NewOrderServiceClient(connOrder))
 	inventoryH := handler.NewInventoryHandler(pb.NewInventoryServiceClient(connInventory))
 	paymentH := handler.NewPaymentHandler(pb.NewPaymentServiceClient(connPayment))
+	cartH := handler.NewCartHandler(pb.NewCartServiceClient(connCart))
 
 	// 3. Define Route Groups
 	api := r.Group("/api")
@@ -98,6 +100,7 @@ func main() {
 	orderH.RegisterRoutes(api)
 	inventoryH.RegisterRoutes(api)
 	paymentH.RegisterRoutes(api)
+	cartH.RegisterRoutes(protected)
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

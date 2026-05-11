@@ -131,20 +131,37 @@ func (h *ProductGrpcHandler) GetSellerDashboardProducts(ctx context.Context, req
 	}, nil
 }
 
+func (h *ProductGrpcHandler) GetProductsBatch(ctx context.Context, req *pb.GetProductsBatchRequest) (*pb.GetProductsBatchResponse, error) {
+	products, err := h.usecase.GetProductsBatch(ctx, req.GetProductIds())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	pbProducts := make(map[int64]*pb.Product)
+	for _, p := range products {
+		pbProducts[p.ID] = toPbProduct(products[p.ID])
+	}
+
+	return &pb.GetProductsBatchResponse{
+		Products: pbProducts,
+	}, nil
+}
+
 // --- Helper Function to map Domain -> Protobuf ---
 func toPbProduct(p *domain.Product) *pb.Product {
 	if p == nil {
 		return nil
 	}
 	return &pb.Product{
-		Id:          p.ID,
-		SellerId:    p.SellerID,
-		Name:        p.Name,
-		Description: p.Description,
-		Category:    p.Category,
-		Price:       p.Price, // Now a float64 (double in proto)
-		ImageUrl:    p.ImageURL,
-		IsActive:    p.IsActive,
-		Stock:       p.Stock,
+		Id:             p.ID,
+		SellerId:       p.SellerID,
+		Name:           p.Name,
+		Description:    p.Description,
+		Category:       p.Category,
+		Price:          p.Price, // Now a float64 (double in proto)
+		ImageUrl:       p.ImageURL,
+		IsActive:       p.IsActive,
+		Stock:          p.Stock,
+		SellerShopName: p.SellerShopName,
 	}
 }

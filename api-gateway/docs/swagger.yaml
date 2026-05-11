@@ -13,6 +13,18 @@ definitions:
     - product_id
     - quantity
     type: object
+  dto.AddToCartReq:
+    properties:
+      product_id:
+        example: 105
+        type: integer
+      quantity:
+        example: 1
+        type: integer
+    required:
+    - product_id
+    - quantity
+    type: object
   dto.ErrorResponse:
     properties:
       message:
@@ -457,6 +469,153 @@ paths:
       summary: 'Step 2: Verify OTP'
       tags:
       - Auth
+  /api/cart/:
+    get:
+      description: Fetches the complete cart with real-time product prices and details
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Current User's Cart
+      tags:
+      - Cart
+  /api/cart/add:
+    post:
+      consumes:
+      - application/json
+      description: Adds a product to the cart or updates its quantity. Send negative
+        quantity to subtract.
+      parameters:
+      - description: Product and Quantity
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AddToCartReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Add or Update Cart Item
+      tags:
+      - Cart
+  /api/cart/clear:
+    delete:
+      description: Empties the cart. Usually called automatically after successful
+        payment.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Clear Entire Cart
+      tags:
+      - Cart
+  /api/cart/count:
+    get:
+      description: Super fast endpoint to get total number of items for the frontend
+        cart icon badge
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Cart Badge Count
+      tags:
+      - Cart
+  /api/cart/remove/{product_id}:
+    delete:
+      description: Completely deletes a product from the user's cart (like clicking
+        the trash icon)
+      parameters:
+      - description: Product ID
+        in: path
+        name: product_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Remove Item from Cart
+      tags:
+      - Cart
   /api/checkout:
     post:
       consumes:
