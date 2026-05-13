@@ -75,6 +75,7 @@ type CartItem struct {
 	Subtotal       float64                `protobuf:"fixed64,5,opt,name=subtotal,proto3" json:"subtotal,omitempty"`
 	ImageUrl       string                 `protobuf:"bytes,6,opt,name=image_url,json=imageUrl,proto3" json:"image_url,omitempty"`
 	SellerShopName string                 `protobuf:"bytes,7,opt,name=seller_shop_name,json=sellerShopName,proto3" json:"seller_shop_name,omitempty"`
+	SellerId       int64                  `protobuf:"varint,8,opt,name=seller_id,json=sellerId,proto3" json:"seller_id,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -156,6 +157,13 @@ func (x *CartItem) GetSellerShopName() string {
 		return x.SellerShopName
 	}
 	return ""
+}
+
+func (x *CartItem) GetSellerId() int64 {
+	if x != nil {
+		return x.SellerId
+	}
+	return 0
 }
 
 type GetCartResponse struct {
@@ -585,7 +593,7 @@ const file_cart_proto_rawDesc = "" +
 	"\n" +
 	"cart.proto\x12\x04cart\")\n" +
 	"\x0eGetCartRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\x03R\x06userId\"\xd2\x01\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\"\xef\x01\n" +
 	"\bCartItem\x12\x1d\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\x03R\tproductId\x12\x1a\n" +
@@ -594,7 +602,8 @@ const file_cart_proto_rawDesc = "" +
 	"\x05price\x18\x04 \x01(\x01R\x05price\x12\x1a\n" +
 	"\bsubtotal\x18\x05 \x01(\x01R\bsubtotal\x12\x1b\n" +
 	"\timage_url\x18\x06 \x01(\tR\bimageUrl\x12(\n" +
-	"\x10seller_shop_name\x18\a \x01(\tR\x0esellerShopName\"7\n" +
+	"\x10seller_shop_name\x18\a \x01(\tR\x0esellerShopName\x12\x1b\n" +
+	"\tseller_id\x18\b \x01(\x03R\bsellerId\"7\n" +
 	"\x0fGetCartResponse\x12$\n" +
 	"\x05items\x18\x01 \x03(\v2\x0e.cart.CartItemR\x05items\"f\n" +
 	"\x10AddToCartRequest\x12\x17\n" +

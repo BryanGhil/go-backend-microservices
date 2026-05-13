@@ -24,6 +24,7 @@ message CartItem {
     double subtotal = 5;
     string image_url = 6;
     string seller_shop_name = 7;
+    int64 seller_id = 8;
 }
 
 message GetCartResponse {

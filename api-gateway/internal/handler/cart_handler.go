@@ -24,7 +24,7 @@ func (h *CartHandler) RegisterRoutes(router *gin.RouterGroup) {
 	// These routes MUST be protected by your JWT Auth Middleware!
 	cartRoutes := router.Group("/cart")
 	{
-		cartRoutes.GET("/", h.GetCart)
+		cartRoutes.GET("", h.GetCart)
 		cartRoutes.POST("/add", h.AddToCart)
 		cartRoutes.DELETE("/remove/:product_id", h.RemoveItem)
 		cartRoutes.DELETE("/clear", h.ClearCart)

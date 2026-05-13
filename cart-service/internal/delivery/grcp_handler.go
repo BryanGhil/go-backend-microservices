@@ -4,14 +4,14 @@ import (
 	"context"
 
 	"ecommerce/cart-service/internal/domain"
-	"ecommerce/pb" 
+	"ecommerce/pb"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type CartGrpcHandler struct {
-	pb.UnimplementedCartServiceServer 
+	pb.UnimplementedCartServiceServer
 	uc domain.CartUseCase
 }
 
@@ -41,6 +41,7 @@ func (h *CartGrpcHandler) GetCart(ctx context.Context, req *pb.GetCartRequest) (
 			Subtotal:       item.Subtotal,
 			ImageUrl:       item.ImageURL,
 			SellerShopName: item.SellerShopName,
+			SellerId:       item.SellerID,
 		})
 	}
 
