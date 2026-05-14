@@ -3,16 +3,16 @@ package domain
 import "context"
 
 type Product struct {
-	ID             int64
-	SellerID       int64
-	Name           string
-	Description    string
-	Category       string
-	Price          float64
-	ImageURL       string
-	IsActive       bool
-	SellerShopName string
-	Stock          int32
+	ID             int64   `json:"id"`
+	SellerID       int64   `json:"seller_id"`
+	Name           string  `json:"name"`
+	Description    string  `json:"description"`
+	Category       string  `json:"category"`
+	Price          float64 `json:"price"`
+	ImageURL       string  `json:"image_url"`
+	IsActive       bool    `json:"is_active"`
+	SellerShopName string  `json:"seller_shop_name"`
+	Stock          int32   `json:"stock"`
 }
 
 // The interfaces dictate how the layers talk to each other
