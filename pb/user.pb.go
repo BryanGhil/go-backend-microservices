@@ -1101,6 +1101,142 @@ func (x *GetSellerProfileRes) GetShopName() string {
 	return ""
 }
 
+type GetUserProfileRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserProfileRequest) Reset() {
+	*x = GetUserProfileRequest{}
+	mi := &file_user_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserProfileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserProfileRequest) ProtoMessage() {}
+
+func (x *GetUserProfileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserProfileRequest.ProtoReflect.Descriptor instead.
+func (*GetUserProfileRequest) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *GetUserProfileRequest) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+type GetUserProfileResponse struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Email           string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	UserId          int64                  `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	FullName        string                 `protobuf:"bytes,3,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
+	Phone           string                 `protobuf:"bytes,4,opt,name=phone,proto3" json:"phone,omitempty"`
+	Address         string                 `protobuf:"bytes,5,opt,name=address,proto3" json:"address,omitempty"`
+	ShopName        string                 `protobuf:"bytes,6,opt,name=shop_name,json=shopName,proto3" json:"shop_name,omitempty"`
+	ShopDescription string                 `protobuf:"bytes,7,opt,name=shop_description,json=shopDescription,proto3" json:"shop_description,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *GetUserProfileResponse) Reset() {
+	*x = GetUserProfileResponse{}
+	mi := &file_user_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserProfileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserProfileResponse) ProtoMessage() {}
+
+func (x *GetUserProfileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserProfileResponse.ProtoReflect.Descriptor instead.
+func (*GetUserProfileResponse) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *GetUserProfileResponse) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *GetUserProfileResponse) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *GetUserProfileResponse) GetFullName() string {
+	if x != nil {
+		return x.FullName
+	}
+	return ""
+}
+
+func (x *GetUserProfileResponse) GetPhone() string {
+	if x != nil {
+		return x.Phone
+	}
+	return ""
+}
+
+func (x *GetUserProfileResponse) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *GetUserProfileResponse) GetShopName() string {
+	if x != nil {
+		return x.ShopName
+	}
+	return ""
+}
+
+func (x *GetUserProfileResponse) GetShopDescription() string {
+	if x != nil {
+		return x.ShopDescription
+	}
+	return ""
+}
+
 var File_user_proto protoreflect.FileDescriptor
 
 const file_user_proto_rawDesc = "" +
@@ -1178,7 +1314,17 @@ const file_user_proto_rawDesc = "" +
 	"\x13GetSellerProfileReq\x12\x1b\n" +
 	"\tseller_id\x18\x01 \x01(\x03R\bsellerId\"2\n" +
 	"\x13GetSellerProfileRes\x12\x1b\n" +
-	"\tshop_name\x18\x01 \x01(\tR\bshopName2\x90\x06\n" +
+	"\tshop_name\x18\x01 \x01(\tR\bshopName\"0\n" +
+	"\x15GetUserProfileRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\"\xdc\x01\n" +
+	"\x16GetUserProfileResponse\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\x03R\x06userId\x12\x1b\n" +
+	"\tfull_name\x18\x03 \x01(\tR\bfullName\x12\x14\n" +
+	"\x05phone\x18\x04 \x01(\tR\x05phone\x12\x18\n" +
+	"\aaddress\x18\x05 \x01(\tR\aaddress\x12\x1b\n" +
+	"\tshop_name\x18\x06 \x01(\tR\bshopName\x12)\n" +
+	"\x10shop_description\x18\a \x01(\tR\x0fshopDescription2\xdd\x06\n" +
 	"\vUserService\x129\n" +
 	"\bRegister\x12\x15.user.RegisterRequest\x1a\x16.user.RegisterResponse\x120\n" +
 	"\x05Login\x12\x12.user.LoginRequest\x1a\x13.user.LoginResponse\x128\n" +
@@ -1191,7 +1337,8 @@ const file_user_proto_rawDesc = "" +
 	"\x11RevokeAllSessions\x12\x1e.user.RevokeAllSessionsRequest\x1a\x15.user.SuccessResponse\x12:\n" +
 	"\tResendOTP\x12\x16.user.ResendOTPRequest\x1a\x15.user.SuccessResponse\x124\n" +
 	"\x06Logout\x12\x13.user.LogoutRequest\x1a\x15.user.SuccessResponse\x12H\n" +
-	"\x10GetSellerProfile\x12\x19.user.GetSellerProfileReq\x1a\x19.user.GetSellerProfileResB\x0eZ\fecommerce/pbb\x06proto3"
+	"\x10GetSellerProfile\x12\x19.user.GetSellerProfileReq\x1a\x19.user.GetSellerProfileRes\x12K\n" +
+	"\x0eGetUserProfile\x12\x1b.user.GetUserProfileRequest\x1a\x1c.user.GetUserProfileResponseB\x0eZ\fecommerce/pbb\x06proto3"
 
 var (
 	file_user_proto_rawDescOnce sync.Once
@@ -1205,7 +1352,7 @@ func file_user_proto_rawDescGZIP() []byte {
 	return file_user_proto_rawDescData
 }
 
-var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_user_proto_goTypes = []any{
 	(*RegisterRequest)(nil),          // 0: user.RegisterRequest
 	(*RegisterResponse)(nil),         // 1: user.RegisterResponse
@@ -1227,6 +1374,8 @@ var file_user_proto_goTypes = []any{
 	(*LogoutRequest)(nil),            // 17: user.LogoutRequest
 	(*GetSellerProfileReq)(nil),      // 18: user.GetSellerProfileReq
 	(*GetSellerProfileRes)(nil),      // 19: user.GetSellerProfileRes
+	(*GetUserProfileRequest)(nil),    // 20: user.GetUserProfileRequest
+	(*GetUserProfileResponse)(nil),   // 21: user.GetUserProfileResponse
 }
 var file_user_proto_depIdxs = []int32{
 	11, // 0: user.GetSessionsResponse.sessions:type_name -> user.SessionInfo
@@ -1242,20 +1391,22 @@ var file_user_proto_depIdxs = []int32{
 	16, // 10: user.UserService.ResendOTP:input_type -> user.ResendOTPRequest
 	17, // 11: user.UserService.Logout:input_type -> user.LogoutRequest
 	18, // 12: user.UserService.GetSellerProfile:input_type -> user.GetSellerProfileReq
-	1,  // 13: user.UserService.Register:output_type -> user.RegisterResponse
-	3,  // 14: user.UserService.Login:output_type -> user.LoginResponse
-	7,  // 15: user.UserService.VerifyOTP:output_type -> user.TokenResponse
-	7,  // 16: user.UserService.GoogleLogin:output_type -> user.TokenResponse
-	7,  // 17: user.UserService.RefreshToken:output_type -> user.TokenResponse
-	9,  // 18: user.UserService.UpdateProfile:output_type -> user.UpdateProfileResponse
-	12, // 19: user.UserService.GetUserSessions:output_type -> user.GetSessionsResponse
-	15, // 20: user.UserService.RevokeSession:output_type -> user.SuccessResponse
-	15, // 21: user.UserService.RevokeAllSessions:output_type -> user.SuccessResponse
-	15, // 22: user.UserService.ResendOTP:output_type -> user.SuccessResponse
-	15, // 23: user.UserService.Logout:output_type -> user.SuccessResponse
-	19, // 24: user.UserService.GetSellerProfile:output_type -> user.GetSellerProfileRes
-	13, // [13:25] is the sub-list for method output_type
-	1,  // [1:13] is the sub-list for method input_type
+	20, // 13: user.UserService.GetUserProfile:input_type -> user.GetUserProfileRequest
+	1,  // 14: user.UserService.Register:output_type -> user.RegisterResponse
+	3,  // 15: user.UserService.Login:output_type -> user.LoginResponse
+	7,  // 16: user.UserService.VerifyOTP:output_type -> user.TokenResponse
+	7,  // 17: user.UserService.GoogleLogin:output_type -> user.TokenResponse
+	7,  // 18: user.UserService.RefreshToken:output_type -> user.TokenResponse
+	9,  // 19: user.UserService.UpdateProfile:output_type -> user.UpdateProfileResponse
+	12, // 20: user.UserService.GetUserSessions:output_type -> user.GetSessionsResponse
+	15, // 21: user.UserService.RevokeSession:output_type -> user.SuccessResponse
+	15, // 22: user.UserService.RevokeAllSessions:output_type -> user.SuccessResponse
+	15, // 23: user.UserService.ResendOTP:output_type -> user.SuccessResponse
+	15, // 24: user.UserService.Logout:output_type -> user.SuccessResponse
+	19, // 25: user.UserService.GetSellerProfile:output_type -> user.GetSellerProfileRes
+	21, // 26: user.UserService.GetUserProfile:output_type -> user.GetUserProfileResponse
+	14, // [14:27] is the sub-list for method output_type
+	1,  // [1:14] is the sub-list for method input_type
 	1,  // [1:1] is the sub-list for extension type_name
 	1,  // [1:1] is the sub-list for extension extendee
 	0,  // [0:1] is the sub-list for field type_name
@@ -1272,7 +1423,7 @@ func file_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_proto_rawDesc), len(file_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   20,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

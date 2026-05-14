@@ -54,7 +54,7 @@ func generateRandomOTP() string {
 	return fmt.Sprintf("%06d", rand.Intn(1000000))
 }
 
-func (u *userUseCase) generateTokenPair(ctx context.Context, user *domain.User, userAgent string, clientIP string) (domain.TokenRes, error) {
+func (u *userUseCase) generateTokenPair(ctx context.Context, user *domain.User, userAgent string, clientIP string, existingSessionID string) (domain.TokenRes, error) {
 	tracer := otel.Tracer("user-usecase")
 	ctx, span := tracer.Start(ctx, "UseCase.generateTokenPair")
 	defer span.End()
@@ -71,8 +71,13 @@ func (u *userUseCase) generateTokenPair(ctx context.Context, user *domain.User, 
 
 	refreshToken := uuid.New().String()
 
+	sessionID := existingSessionID
+	if sessionID == "" {
+		sessionID = uuid.New().String() // Generate new only if it's a brand new login
+	}
+
 	sessionData := &domain.SessionData{
-		SessionID: uuid.New().String(),
+		SessionID: sessionID,
 		UserID:    user.ID,
 		Role:      user.Role,
 		UserAgent: userAgent,
@@ -196,7 +201,7 @@ func (u *userUseCase) VerifyOTP(ctx context.Context, email, otp, userAgent, clie
 
 	u.redisRepo.DeleteOTP(ctx, email)
 
-	return u.generateTokenPair(ctx, user, userAgent, clientIP)
+	return u.generateTokenPair(ctx, user, userAgent, clientIP, "")
 }
 
 func (u *userUseCase) GoogleLogin(ctx context.Context, googleIDToken string, userAgent string, clientIP string) (domain.TokenRes, error) {
@@ -240,7 +245,7 @@ func (u *userUseCase) GoogleLogin(ctx context.Context, googleIDToken string, use
 	}
 
 	// 3. Return tokens
-	return u.generateTokenPair(ctx, user, userAgent, clientIP)
+	return u.generateTokenPair(ctx, user, userAgent, clientIP, "")
 }
 
 func (u *userUseCase) RefreshToken(ctx context.Context, refreshToken string, userAgent string, clientIP string) (domain.TokenRes, error) {
@@ -265,10 +270,13 @@ func (u *userUseCase) RefreshToken(ctx context.Context, refreshToken string, use
 	}
 
 	// 3. Delete old refresh token (Token Rotation for security)
-	u.redisRepo.DeleteRefreshToken(ctx, refreshToken)
+	err = u.redisRepo.DeleteRefreshToken(ctx, refreshToken)
+	if err != nil {
+		return domain.TokenRes{}, errors.New("token already rotated")
+	}
 
 	// 4. Generate new pair
-	return u.generateTokenPair(ctx, user, userAgent, clientIP)
+	return u.generateTokenPair(ctx, user, userAgent, clientIP, session.SessionID)
 }
 
 func (u *userUseCase) UpdateProfile(ctx context.Context, req *domain.User) error {

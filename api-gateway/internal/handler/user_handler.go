@@ -29,6 +29,7 @@ func (h *UserHandler) RegisterRoutes(public *gin.RouterGroup, protected *gin.Rou
 
 	// Protected User Routes
 	protected.PUT("/users/profile", h.UpdateProfile)
+	protected.GET("/users/profile", h.GetUserProfile)
 
 	// NEW: Protected Session Management Routes
 	protected.GET("/users/sessions", h.GetSessions)
@@ -291,9 +292,20 @@ func (h *UserHandler) RefreshToken(c *gin.Context) {
 	})
 
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusUnauthorized, "Invalid or expired refresh token")
-		return
-	}
+        errMsg := status.Convert(err).Message()
+        
+        // FIX: Detect the race condition error we wrote earlier!
+        if errMsg == "token already consumed by concurrent request" || errMsg == "token already rotated" {
+            // Return 409 Conflict (or 429). This tells the frontend: 
+            // "You already asked me this! Ignore this error and don't log out!"
+            utils.ErrorResponse(c, http.StatusConflict, "Concurrent refresh request ignored")
+            return
+        }
+
+        // For all other genuine errors (expired, invalid), return 401 to trigger a logout
+        utils.ErrorResponse(c, http.StatusUnauthorized, "Session expired, please login again")
+        return
+    }
 
 	if _, err := c.Cookie("refresh_token"); err == nil {
 		c.SetCookie("refresh_token", res.RefreshToken, 7*24*60*60, "/api/auth", "localhost", false, true)
@@ -455,4 +467,37 @@ func (h *UserHandler) Logout(c *gin.Context) {
 	c.SetCookie("refresh_token", "", -1, "/api/auth", "localhost", false, true)
 
 	utils.SuccessResponse(c, http.StatusOK, "Successfully logged out", nil)
+}
+
+// @Summary Get User Profile 
+// @Description Get user profile email, id, address, phone number, etc
+// @Tags Users
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} dto.UserProfileRes
+// @Failure 401 {object} dto.ErrorResponse "Unauthorized"
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /api/users/profile [get]
+func (h *UserHandler) GetUserProfile(c *gin.Context) {
+	userID := c.GetInt64("userID")
+	if userID == 0 {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	res, err := h.client.GetUserProfile(c.Request.Context(), &pb.GetUserProfileRequest{UserId: userID})
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, status.Convert(err).Message())
+		return
+	}
+
+	utils.SuccessResponse(c, http.StatusOK, "Profile retrived successfully", dto.UserProfileRes{
+		Email: res.Email,
+		UserID: userID,
+		FullName: res.FullName,
+		Phone: res.Phone,
+		Address: res.Address,
+		ShopName: res.ShopName,
+		ShopDescription: res.ShopDescription,
+	})
 }

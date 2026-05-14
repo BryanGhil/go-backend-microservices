@@ -22,6 +22,7 @@ service UserService {
   rpc Logout (LogoutRequest) returns (SuccessResponse);
   
   rpc GetSellerProfile (GetSellerProfileReq) returns (GetSellerProfileRes);
+  rpc GetUserProfile (GetUserProfileRequest) returns (GetUserProfileResponse);
 }
 
 message RegisterRequest { 
@@ -129,4 +130,18 @@ message GetSellerProfileReq {
 
 message GetSellerProfileRes {
   string shop_name = 1;
+}
+
+message GetUserProfileRequest {
+  int64 user_id = 1;
+}
+
+message GetUserProfileResponse {
+  string email = 1;
+  int64 user_id = 2;
+  string full_name = 3;
+  string phone = 4;
+  string address = 5;
+  string shop_name = 6;
+  string shop_description = 7;
 }

@@ -25,7 +25,7 @@ func RateLimitMiddleware(limiter *redis_rate.Limiter) gin.HandlerFunc {
 		// 2. Ask Redis if this request is allowed
 		// We allow 2 requests per second, with a maximum burst of 5.
 		limit := redis_rate.PerSecond(2)
-		limit.Burst = 5
+		limit.Burst = 10
 
 		res, err := limiter.Allow(c.Request.Context(), limiterKey, limit)
 		if err != nil {

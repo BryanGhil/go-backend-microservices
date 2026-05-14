@@ -246,6 +246,30 @@ definitions:
       user_id:
         type: integer
     type: object
+  dto.UserProfileRes:
+    properties:
+      address:
+        example: ZZZ Street
+        type: string
+      email:
+        example: zzz@zzz.com
+        type: string
+      full_name:
+        example: Hello World
+        type: string
+      phone:
+        example: "12345678"
+        type: string
+      shop_description:
+        example: The best shop in the world
+        type: string
+      shop_name:
+        example: ZZ Shop
+        type: string
+      user_id:
+        example: 1
+        type: integer
+    type: object
   dto.VerifyOTPReq:
     properties:
       client_type:
@@ -930,6 +954,28 @@ paths:
       tags:
       - Search
   /api/users/profile:
+    get:
+      description: Get user profile email, id, address, phone number, etc
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserProfileRes'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get User Profile
+      tags:
+      - Users
     put:
       consumes:
       - application/json

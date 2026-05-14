@@ -31,6 +31,7 @@ const (
 	UserService_ResendOTP_FullMethodName         = "/user.UserService/ResendOTP"
 	UserService_Logout_FullMethodName            = "/user.UserService/Logout"
 	UserService_GetSellerProfile_FullMethodName  = "/user.UserService/GetSellerProfile"
+	UserService_GetUserProfile_FullMethodName    = "/user.UserService/GetUserProfile"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -51,6 +52,7 @@ type UserServiceClient interface {
 	ResendOTP(ctx context.Context, in *ResendOTPRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
 	GetSellerProfile(ctx context.Context, in *GetSellerProfileReq, opts ...grpc.CallOption) (*GetSellerProfileRes, error)
+	GetUserProfile(ctx context.Context, in *GetUserProfileRequest, opts ...grpc.CallOption) (*GetUserProfileResponse, error)
 }
 
 type userServiceClient struct {
@@ -181,6 +183,16 @@ func (c *userServiceClient) GetSellerProfile(ctx context.Context, in *GetSellerP
 	return out, nil
 }
 
+func (c *userServiceClient) GetUserProfile(ctx context.Context, in *GetUserProfileRequest, opts ...grpc.CallOption) (*GetUserProfileResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUserProfileResponse)
+	err := c.cc.Invoke(ctx, UserService_GetUserProfile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -199,6 +211,7 @@ type UserServiceServer interface {
 	ResendOTP(context.Context, *ResendOTPRequest) (*SuccessResponse, error)
 	Logout(context.Context, *LogoutRequest) (*SuccessResponse, error)
 	GetSellerProfile(context.Context, *GetSellerProfileReq) (*GetSellerProfileRes, error)
+	GetUserProfile(context.Context, *GetUserProfileRequest) (*GetUserProfileResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -244,6 +257,9 @@ func (UnimplementedUserServiceServer) Logout(context.Context, *LogoutRequest) (*
 }
 func (UnimplementedUserServiceServer) GetSellerProfile(context.Context, *GetSellerProfileReq) (*GetSellerProfileRes, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetSellerProfile not implemented")
+}
+func (UnimplementedUserServiceServer) GetUserProfile(context.Context, *GetUserProfileRequest) (*GetUserProfileResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetUserProfile not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -482,6 +498,24 @@ func _UserService_GetSellerProfile_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_GetUserProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserProfileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetUserProfile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetUserProfile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetUserProfile(ctx, req.(*GetUserProfileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -536,6 +570,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSellerProfile",
 			Handler:    _UserService_GetSellerProfile_Handler,
+		},
+		{
+			MethodName: "GetUserProfile",
+			Handler:    _UserService_GetUserProfile_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

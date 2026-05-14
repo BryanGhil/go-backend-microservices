@@ -78,3 +78,13 @@ type LogoutReq struct {
 	// Not required because web clients send it via cookie
 	RefreshToken string `json:"refresh_token" example:"your-uuid-refresh-token"`
 }
+
+type UserProfileRes struct {
+	Email           string `json:"email" example:"zzz@zzz.com"`
+	UserID          int64  `json:"user_id" example:"1"`
+	FullName        string `json:"full_name" example:"Hello World"`
+	Phone           string `json:"phone" example:"12345678"`
+	Address         string `json:"address" example:"ZZZ Street"`
+	ShopName        string `json:"shop_name,omitempty" example:"ZZ Shop"`
+	ShopDescription string `json:"shop_description,omitempty" example:"The best shop in the world"`
+}

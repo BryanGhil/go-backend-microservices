@@ -87,17 +87,27 @@ func (r *sessionRepo) DeleteRefreshToken(ctx context.Context, token string) erro
 
 	userSetKey := fmt.Sprintf("user_sessions:%d", data.UserID)
 
-	// Remove from Set and Delete key
-	// We use a pipeline or just two operations. For tracing, we capture any error from either.
-	if err := r.Redis.SRem(ctx, userSetKey, token).Err(); err != nil {
-		span.RecordError(err)
-	}
-
-	err = r.Redis.Del(ctx, token).Err()
+	// FIX: Use .Result() to get the actual number of deleted keys!
+	// This is an ATOMIC operation.
+	deletedCount, err := r.Redis.Del(ctx, token).Result()
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "failed to delete token key")
 		return err
+	}
+
+	// RACE CONDITION SHIELD: 
+	// If deletedCount is 0, another request (React Strict Mode) 
+	// beat us to it by 1 millisecond. Abort immediately!
+	if deletedCount == 0 {
+		errConcurrent := errors.New("token already consumed by concurrent request")
+		span.RecordError(errConcurrent)
+		return errConcurrent
+	}
+
+	// Only the request that actually deleted the token gets to run this cleanup
+	if err := r.Redis.SRem(ctx, userSetKey, token).Err(); err != nil {
+		span.RecordError(err)
 	}
 
 	return nil

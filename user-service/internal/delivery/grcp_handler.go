@@ -181,3 +181,25 @@ func (h *UserGrpcHandler) GetSellerProfile(ctx context.Context, req *pb.GetSelle
 		ShopName: user.SellerProfile.ShopName,
 	}, nil
 }
+
+func (h *UserGrpcHandler) GetUserProfile(ctx context.Context, req *pb.GetUserProfileRequest) (*pb.GetUserProfileResponse, error) {
+	user, err := h.usecase.GetUserById(ctx, req.GetUserId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+	response := &pb.GetUserProfileResponse{
+		Email:    user.Email,
+		UserId:   req.GetUserId(),
+		FullName: user.FullName,
+		Phone:    user.Phone,
+		Address:  user.Address,
+	}
+
+	// 2. Safely check if the SellerProfile pointer exists!
+	if user.SellerProfile != nil {
+		response.ShopName = user.SellerProfile.ShopName
+		response.ShopDescription = user.SellerProfile.ShopDescription
+	}
+
+	return response, nil
+}

@@ -89,13 +89,14 @@ func (r *userRepo) GetUserById(ctx context.Context, id int64) (*domain.User, err
 	defer span.End()
 
 	var u domain.User
-	var shopName sql.NullString // Safely handles null values for buyers
+	var shopName sql.NullString
+	var shopDescr sql.NullString
 
 	// FIX: Added shop_name to the SELECT query
-	query := `SELECT u.id, u.email, u.password_hash, u.role, u.is_active, sp.shop_name FROM users u LEFT JOIN seller_profiles sp on u.id = sp.user_id WHERE u.id = $1`
+	query := `SELECT u.id, u.email, u.password_hash, u.role, u.is_active, u.full_name, u.phone_number, u.address, sp.shop_name, sp.shop_description FROM users u LEFT JOIN seller_profiles sp on u.id = sp.user_id WHERE u.id = $1`
 
 	err := r.DB.QueryRowContext(ctx, query, id).Scan(
-		&u.ID, &u.Email, &u.PasswordHash, &u.Role, &u.IsActive, &shopName,
+		&u.ID, &u.Email, &u.PasswordHash, &u.Role, &u.IsActive, &u.FullName, &u.Phone, &u.Address, &shopName, &shopDescr,
 	)
 
 	if err != nil {
@@ -105,7 +106,8 @@ func (r *userRepo) GetUserById(ctx context.Context, id int64) (*domain.User, err
 
 	if u.Role == "seller" && shopName.Valid {
 		u.SellerProfile = &domain.SellerProfile{
-			ShopName: shopName.String,
+			ShopName:        shopName.String,
+			ShopDescription: shopDescr.String,
 		}
 	}
 

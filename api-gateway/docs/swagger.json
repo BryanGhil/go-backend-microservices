@@ -992,6 +992,41 @@
             }
         },
         "/api/users/profile": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get user profile email, id, address, phone number, etc",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get User Profile",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserProfileRes"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
             "put": {
                 "security": [
                     {
@@ -1470,6 +1505,39 @@
             "properties": {
                 "user_id": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.UserProfileRes": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "example": "ZZZ Street"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "zzz@zzz.com"
+                },
+                "full_name": {
+                    "type": "string",
+                    "example": "Hello World"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "12345678"
+                },
+                "shop_description": {
+                    "type": "string",
+                    "example": "The best shop in the world"
+                },
+                "shop_name": {
+                    "type": "string",
+                    "example": "ZZ Shop"
+                },
+                "user_id": {
+                    "type": "integer",
+                    "example": 1
                 }
             }
         },
