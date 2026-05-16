@@ -36,28 +36,27 @@ func (c *PaymentConsumer) Start(ctx context.Context) {
 
 			// 2. Start the span using the linked context
 			spanCtx, span := tracer.Start(linkedCtx, "ConsumeKafkaMessage: "+string(m.Key))
-			defer span.End() // Safely closes when the function finishes
+			defer span.End()
 
 			// 3. Business Logic
 			if string(m.Key) == "InventoryReserved" {
 				var event domain.SagaEvent
 				json.Unmarshal(m.Value, &event)
 
-				log.Printf("Processing payment for Order %d ($%.2f)...", event.OrderID, event.Amount)
+				// FIX: Update logs to use CorrelationID and TotalAmount
+				log.Printf("Processing payment for Checkout %s ($%.2f)...", event.CorrelationID, event.TotalAmount)
 				
-				// CRITICAL: Pass spanCtx down to the UseCase so the DB query gets traced!
+				// Make sure your ProcessPayment UseCase is updated to handle the new event struct!
 				success, _ := c.uc.ProcessPayment(spanCtx, event)
 
 				if success {
-					log.Printf("Payment SUCCESS for Order %d", event.OrderID)
-					// CRITICAL: Pass spanCtx to the publisher so it injects the Trace ID into the next message!
+					log.Printf("Payment SUCCESS for Checkout %s", event.CorrelationID)
 					c.pub.PublishEvent(spanCtx, "payment-events", "PaymentProcessed", event)
 				} else {
-					log.Printf("Payment DECLINED for Order %d. Initiating Rollback.", event.OrderID)
-					// CRITICAL: Pass spanCtx here too!
+					log.Printf("Payment DECLINED for Checkout %s. Initiating Rollback.", event.CorrelationID)
 					c.pub.PublishEvent(spanCtx, "payment-events", "PaymentDeclined", event)
 				}
 			}
-		}() // Execute the anonymous function
+		}() 
 	}
 }

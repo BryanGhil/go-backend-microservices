@@ -44,7 +44,7 @@ func (c *SagaConsumer) Start(ctx context.Context) {
 				// If we hear from Payment or Inventory, update the order status
 				if eventType == "PaymentProcessed" || eventType == "PaymentDeclined" || eventType == "InventoryFailed" {
 					c.uc.HandleSagaCallback(spanCtx, eventType, event)
-					log.Printf("Saga Step Completed: Order %d is now reacting to %s", event.OrderID, eventType)
+					log.Printf("Saga Step Completed: Order %d is now reacting to %s", event.CorrelationID, eventType)
 				}
 			}
 		}()

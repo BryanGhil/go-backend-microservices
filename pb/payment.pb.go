@@ -23,7 +23,7 @@ const (
 
 type GetPaymentStatusRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OrderId       int64                  `protobuf:"varint,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	CorrelationId string                 `protobuf:"bytes,1,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -58,11 +58,11 @@ func (*GetPaymentStatusRequest) Descriptor() ([]byte, []int) {
 	return file_payment_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GetPaymentStatusRequest) GetOrderId() int64 {
+func (x *GetPaymentStatusRequest) GetCorrelationId() string {
 	if x != nil {
-		return x.OrderId
+		return x.CorrelationId
 	}
-	return 0
+	return ""
 }
 
 type GetPaymentStatusResponse struct {
@@ -113,9 +113,9 @@ var File_payment_proto protoreflect.FileDescriptor
 
 const file_payment_proto_rawDesc = "" +
 	"\n" +
-	"\rpayment.proto\x12\apayment\"4\n" +
-	"\x17GetPaymentStatusRequest\x12\x19\n" +
-	"\border_id\x18\x01 \x01(\x03R\aorderId\"2\n" +
+	"\rpayment.proto\x12\apayment\"@\n" +
+	"\x17GetPaymentStatusRequest\x12%\n" +
+	"\x0ecorrelation_id\x18\x01 \x01(\tR\rcorrelationId\"2\n" +
 	"\x18GetPaymentStatusResponse\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status2i\n" +
 	"\x0ePaymentService\x12W\n" +

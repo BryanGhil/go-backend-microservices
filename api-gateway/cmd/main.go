@@ -97,7 +97,7 @@ func main() {
 	userH.RegisterRoutes(api, protected)
 	productH.RegisterRoutes(api, protected)
 	searchH.RegisterRoutes(api)
-	orderH.RegisterRoutes(api)
+	orderH.RegisterRoutes(protected)
 	inventoryH.RegisterRoutes(api)
 	paymentH.RegisterRoutes(api)
 	cartH.RegisterRoutes(protected)

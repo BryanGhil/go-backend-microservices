@@ -17,12 +17,23 @@ import (
 	"github.com/segmentio/kafka-go"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	// --- NEW MIGRATION IMPORTS ---
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
+
+func dial(addr string) *grpc.ClientConn {
+	conn, err := grpc.Dial(addr, 
+					grpc.WithTransportCredentials(insecure.NewCredentials()), 
+					grpc.WithStatsHandler(otelgrpc.NewClientHandler()),)
+	if err != nil {
+		log.Fatalf("could not connect to %s: %v", addr, err)
+	}
+	return conn
+}
 
 func runDBMigrations(db *sql.DB) {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
@@ -73,10 +84,12 @@ func main() {
 		GroupID:     "order-saga-coordinator",
 	})
 
+	connProduct := dial("localhost:9001")
+
 	// 4. Wiring
 	repo := repository.NewPostgresOrderRepo(db)
 	pub := repository.NewKafkaPublisher(kw)
-	uc := usecase.NewOrderUseCase(repo, pub)
+	uc := usecase.NewOrderUseCase(repo, pub, pb.NewProductServiceClient(connProduct))
 	
 	// 5. Start Kafka Consumer in background
 	consumer := worker.NewSagaConsumer(kr, uc)

@@ -532,7 +532,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Initiates the Saga pattern for ordering a product",
+                "description": "Initiates the Saga pattern for ordering one or multiple products",
                 "consumes": [
                     "application/json"
                 ],
@@ -545,18 +545,32 @@ const docTemplate = `{
                 "summary": "Create an Order (Checkout)",
                 "parameters": [
                     {
-                        "description": "Checkout Details",
+                        "description": "product_id and quantity",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.CheckoutReq"
+                            "$ref": "#/definitions/dto.CheckoutReq"
                         }
                     }
                 ],
                 "responses": {
                     "202": {
                         "description": "Accepted",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -652,6 +666,32 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/orders": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Fetch all orders for the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Get User Orders",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/orders/{id}": {
             "get": {
                 "security": [
@@ -659,7 +699,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Check if an order is PENDING, COMPLETED, or CANCELLED",
+                "description": "Check if an individual order is PENDING, COMPLETED, or CANCELLED",
                 "produces": [
                     "application/json"
                 ],
@@ -1202,6 +1242,38 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CheckoutItemReq": {
+            "type": "object",
+            "required": [
+                "product_id",
+                "quantity"
+            ],
+            "properties": {
+                "product_id": {
+                    "type": "integer",
+                    "example": 105
+                },
+                "quantity": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 2
+                }
+            }
+        },
+        "dto.CheckoutReq": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CheckoutItemReq"
+                    }
+                }
+            }
+        },
         "dto.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -1570,19 +1642,6 @@ const docTemplate = `{
                 "otp": {
                     "type": "string",
                     "example": "123456"
-                }
-            }
-        },
-        "handler.CheckoutReq": {
-            "type": "object",
-            "properties": {
-                "amount": {
-                    "type": "number",
-                    "example": 49.99
-                },
-                "product_id": {
-                    "type": "integer",
-                    "example": 1
                 }
             }
         }

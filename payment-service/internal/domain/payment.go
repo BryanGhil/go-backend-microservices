@@ -2,23 +2,28 @@ package domain
 import "context"
 
 type Payment struct {
-	ID      int64
-	OrderID int64
-	Amount  float64
-	Status  string // SUCCESS, DECLINED
+	ID            int64
+	CorrelationID string  // FIX: Replaced OrderID with CorrelationID
+	Amount        float64
+	Status        string  // SUCCESS, DECLINED
 }
 
-// Shared Saga Event
+type SagaItem struct {
+	ProductID int64 `json:"product_id"`
+	Quantity  int   `json:"quantity"`
+}
+
 type SagaEvent struct {
-	OrderID   int64   `json:"order_id"`
-	UserID    int64   `json:"user_id"`
-	ProductID int64   `json:"product_id"`
-	Amount    float64 `json:"amount"`
+	CorrelationID string     `json:"correlation_id"` 
+	UserID        int64      `json:"user_id"`
+	TotalAmount   float64    `json:"total_amount"`
+	Items         []SagaItem `json:"items"`
 }
 
 type PaymentRepository interface {
 	SaveTransaction(ctx context.Context, p *Payment) error
-	GetStatusByOrderID(ctx context.Context, orderID int64) (string, error)
+    // FIX: Update to expect a string
+	GetStatusByCorrelationID(ctx context.Context, correlationID string) (string, error) 
 }
 
 type KafkaPublisher interface {
@@ -27,5 +32,6 @@ type KafkaPublisher interface {
 
 type PaymentUseCase interface {
 	ProcessPayment(ctx context.Context, event SagaEvent) (bool, error)
-	GetStatus(ctx context.Context, orderID int64) (string, error)
+    // FIX: Update to expect a string
+	GetStatus(ctx context.Context, correlationID string) (string, error) 
 }

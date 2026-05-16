@@ -7,12 +7,16 @@ type Inventory struct {
 	Stock     int32
 }
 
-// Shared Saga Event (From Order Service)
+type SagaItem struct {
+	ProductID int64 `json:"product_id"`
+	Quantity  int   `json:"quantity"`
+}
+
 type SagaEvent struct {
-	OrderID   int64   `json:"order_id"`
-	UserID    int64   `json:"user_id"`
-	ProductID int64   `json:"product_id"`
-	Amount    float64 `json:"amount"`
+	CorrelationID string     `json:"correlation_id"` 
+	UserID        int64      `json:"user_id"`
+	TotalAmount   float64    `json:"total_amount"`
+	Items         []SagaItem `json:"items"`
 }
 
 // 1. Matches the new Product Service fields

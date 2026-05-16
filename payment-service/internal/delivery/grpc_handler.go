@@ -19,7 +19,8 @@ func NewPaymentGrpcHandler(uc domain.PaymentUseCase) *PaymentGrpcHandler {
 }
 
 func (h *PaymentGrpcHandler) GetPaymentStatus(ctx context.Context, req *pb.GetPaymentStatusRequest) (*pb.GetPaymentStatusResponse, error) {
-	paymentStatus, err := h.usecase.GetStatus(ctx, req.GetOrderId())
+    // FIX: Retrieve using the CorrelationId string
+	paymentStatus, err := h.usecase.GetStatus(ctx, req.GetCorrelationId())
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, status.Error(codes.NotFound, "payment record not found")

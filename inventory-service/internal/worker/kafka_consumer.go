@@ -46,7 +46,7 @@ func (c *InventoryConsumer) Start(ctx context.Context) {
 					c.repo.InitializeStock(spanCtx, envelope.Data.ID)
 					log.Printf("Initialized stock for new product %d", envelope.Data.ID)
 				}
-				return 
+				return
 			}
 
 			// 2. ORDER SAGA EVENTS
@@ -56,24 +56,45 @@ func (c *InventoryConsumer) Start(ctx context.Context) {
 
 				switch eventType {
 				case "OrderCreated":
-					err := c.repo.ReserveStock(spanCtx, sEvent.ProductID, 1)
-					if err != nil {
-						log.Printf("Out of stock for Order %d! Emitting failure.", sEvent.OrderID)
+					// FIX: We must loop through ALL items in the cart!
+					var reservedItems []domain.SagaItem
+					var outOfStock bool
+
+					for _, item := range sEvent.Items {
+						err := c.repo.ReserveStock(spanCtx, item.ProductID, int32(item.Quantity))
+						if err != nil {
+							outOfStock = true
+							break // Stop processing if even ONE item fails
+						}
+						reservedItems = append(reservedItems, item)
+					}
+
+					// Partial Rollback Logic
+					if outOfStock {
+						log.Printf("Out of stock for Checkout %s! Rolling back reserved items.", sEvent.CorrelationID)
+						// Release the items we successfully reserved before hitting the failure
+						for _, item := range reservedItems {
+							c.repo.ReleaseStock(spanCtx, item.ProductID, int32(item.Quantity))
+						}
 						c.pub.PublishEvent(spanCtx, "inventory-events", "InventoryFailed", sEvent)
 					} else {
-						log.Printf("Stock reserved for Order %d! Proceeding to payment.", sEvent.OrderID)
+						log.Printf("All stock reserved for Checkout %s! Proceeding to payment.", sEvent.CorrelationID)
 						c.pub.PublishEvent(spanCtx, "inventory-events", "InventoryReserved", sEvent)
 					}
 
 				case "PaymentDeclined":
-					log.Printf("Payment failed for Order %d. Releasing stock reservation.", sEvent.OrderID)
-					// FIX: Changed from Restock to ReleaseStock
-					c.repo.ReleaseStock(spanCtx, sEvent.ProductID, 1)
+					log.Printf("Payment failed for Checkout %s. Releasing all stock.", sEvent.CorrelationID)
+					// FIX: Loop to release all items
+					for _, item := range sEvent.Items {
+						c.repo.ReleaseStock(spanCtx, item.ProductID, int32(item.Quantity))
+					}
 
-				// NEW: Handle successful payments!
-				case "PaymentSucceeded":
-					log.Printf("Payment success for Order %d. Confirming final stock deduction.", sEvent.OrderID)
-					c.repo.ConfirmStock(spanCtx, sEvent.ProductID, 1)
+				case "PaymentProcessed": // Ensure this matches what Payment service sends!
+					log.Printf("Payment success for Checkout %s. Confirming final stock deductions.", sEvent.CorrelationID)
+					// FIX: Loop to confirm all items
+					for _, item := range sEvent.Items {
+						c.repo.ConfirmStock(spanCtx, item.ProductID, int32(item.Quantity))
+					}
 
 				default:
 					log.Printf("Received unhandled saga event: %s", eventType)

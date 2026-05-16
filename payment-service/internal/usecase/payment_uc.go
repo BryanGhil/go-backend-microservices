@@ -27,22 +27,22 @@ func (u *paymentUC) ProcessPayment(ctx context.Context, event domain.SagaEvent) 
 	success := true
 	status := "SUCCESS"
 	
-	if event.Amount > 1000.00 {
+	if event.TotalAmount > 1000.00 {
 		success = false
 		status = "DECLINED"
 	}
 
 	// Save to our ledger
 	payment := &domain.Payment{
-		OrderID: event.OrderID,
-		Amount:  event.Amount,
-		Status:  status,
+		CorrelationID: event.CorrelationID, // FIX: Types now match perfectly!
+		Amount:        event.TotalAmount,
+		Status:        status,
 	}
 	u.repo.SaveTransaction(ctx, payment)
 
 	return success, nil
 }
 
-func (u *paymentUC) GetStatus(ctx context.Context, orderID int64) (string, error) {
-	return u.repo.GetStatusByOrderID(ctx, orderID)
+func (u *paymentUC) GetStatus(ctx context.Context, correlationID string) (string, error) {
+	return u.repo.GetStatusByCorrelationID(ctx, correlationID)
 }

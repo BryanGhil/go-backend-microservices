@@ -22,13 +22,28 @@ func NewOrderGrpcHandler(uc domain.OrderUseCase) *OrderGrpcHandler {
 
 // Handles the Checkout process
 func (h *OrderGrpcHandler) CreateOrder(ctx context.Context, req *pb.CreateOrderRequest) (*pb.CreateOrderResponse, error) {
-	// Call the UseCase
-	orderID, err := h.usecase.Checkout(ctx, req.GetUserId(), req.GetProductId(), float64(req.GetAmount()))
+	// Map Protobuf items to Domain items
+	var items []domain.CheckoutItem
+	for _, reqItem := range req.GetItems() {
+		items = append(items, domain.CheckoutItem{
+			ProductID: reqItem.GetProductId(),
+			Quantity:  int(reqItem.GetQuantity()),
+		})
+	}
+
+	// Ensure there is at least one item to checkout
+	if len(items) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "cannot checkout empty cart")
+	}
+
+	// Call UseCase
+	correlationID, err := h.usecase.Checkout(ctx, req.GetUserId(), items)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to process checkout")
 	}
 
-	return &pb.CreateOrderResponse{OrderId: orderID}, nil
+	// Return the CorrelationID to the API Gateway so it can pass it to the Payment Service!
+	return &pb.CreateOrderResponse{CorrelationId: correlationID}, nil
 }
 
 // Handles checking the status of the order (Pending, Completed, Cancelled)
@@ -42,4 +57,23 @@ func (h *OrderGrpcHandler) GetOrderStatus(ctx context.Context, req *pb.GetOrderS
 	}
 
 	return &pb.GetOrderStatusResponse{Status: orderStatus}, nil
+}
+
+func (h *OrderGrpcHandler) GetUserOrders(ctx context.Context, req *pb.GetUserOrdersRequest) (*pb.GetUserOrdersResponse, error) {
+	orders, err := h.usecase.GetUserOrders(ctx, req.GetUserId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to fetch user orders")
+	}
+
+	var pbOrders []*pb.OrderItemResponse
+	for _, o := range orders {
+		pbOrders = append(pbOrders, &pb.OrderItemResponse{
+			Id:            o.ID,
+			Amount:        o.Amount,
+			Status:        o.Status,
+			CorrelationId: o.CorrelationID,
+		})
+	}
+
+	return &pb.GetUserOrdersResponse{Orders: pbOrders}, nil
 }

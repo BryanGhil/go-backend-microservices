@@ -6,5 +6,5 @@ service PaymentService {
   rpc GetPaymentStatus (GetPaymentStatusRequest) returns (GetPaymentStatusResponse);
 }
 
-message GetPaymentStatusRequest { int64 order_id = 1; }
+message GetPaymentStatusRequest { string correlation_id = 1; }
 message GetPaymentStatusResponse { string status = 1; }

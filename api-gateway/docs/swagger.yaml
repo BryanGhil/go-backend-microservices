@@ -25,6 +25,28 @@ definitions:
     - product_id
     - quantity
     type: object
+  dto.CheckoutItemReq:
+    properties:
+      product_id:
+        example: 105
+        type: integer
+      quantity:
+        example: 2
+        minimum: 1
+        type: integer
+    required:
+    - product_id
+    - quantity
+    type: object
+  dto.CheckoutReq:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.CheckoutItemReq'
+        type: array
+    required:
+    - items
+    type: object
   dto.ErrorResponse:
     properties:
       message:
@@ -288,15 +310,6 @@ definitions:
     - client_type
     - email
     - otp
-    type: object
-  handler.CheckoutReq:
-    properties:
-      amount:
-        example: 49.99
-        type: number
-      product_id:
-        example: 1
-        type: integer
     type: object
 host: localhost:8080
 info:
@@ -644,19 +657,29 @@ paths:
     post:
       consumes:
       - application/json
-      description: Initiates the Saga pattern for ordering a product
+      description: Initiates the Saga pattern for ordering one or multiple products
       parameters:
-      - description: Checkout Details
+      - description: product_id and quantity
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handler.CheckoutReq'
+          $ref: '#/definitions/dto.CheckoutReq'
       produces:
       - application/json
       responses:
         "202":
           description: Accepted
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
           schema:
             additionalProperties: true
             type: object
@@ -722,9 +745,25 @@ paths:
       summary: Add Physical Stock
       tags:
       - Inventory
+  /api/orders:
+    get:
+      description: Fetch all orders for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get User Orders
+      tags:
+      - Orders
   /api/orders/{id}:
     get:
-      description: Check if an order is PENDING, COMPLETED, or CANCELLED
+      description: Check if an individual order is PENDING, COMPLETED, or CANCELLED
       parameters:
       - description: Order ID
         in: path
